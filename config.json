@@ -3,7 +3,7 @@
     "Port": "8080",
     "ThreadPoolSize" : "10",
     "AllowThreadModel" : "Pool|Multi|Single",
-    "ThreadModel" : "Single", 
+    "ThreadModel" : "Pool", 
     "Plugins" : [
         {
             "Path" : "stat",
@@ -13,22 +13,11 @@
             "Singleton" : "false"
         },
         {
-            "Path" : "ox",
-            "Class" : "DNWS.OXPlugin",
+            "Path" : "werewolf",
+            "Class" : "DNWS.WerewolfPlugin",
             "Preprocessing" : "false",
-            "Postprocessing" :"false" 
-        },
-        {
-            "Path" : "delay",
-            "Class" : "DNWS.DelayPlugin",
-            "Preprocessing" : "false",
-            "Postprocessing" :"false" 
-        },
-        {
-            "Path" : "twitter",
-            "Class" : "DNWS.TwitterPlugin",
-            "Preprocessing" : "false",
-            "Postprocessing" :"false" 
+            "Postprocessing" : "false" ,
+            "Singleton" : "false"
         }
     ]
 }

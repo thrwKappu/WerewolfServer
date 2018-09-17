@@ -5,3 +5,5 @@ bin/
 obj/
 Migrations/
 *.db
+.vs/DNWS/v15/.suo
+.vscode/settings.json

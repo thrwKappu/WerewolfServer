@@ -9,6 +9,7 @@ namespace DNWS
   {
     protected String _url;
     protected String _filename;
+    protected String _path;
     protected static Dictionary<String, String> _propertyListDictionary = null;
     protected static Dictionary<String, String> _requestListDictionary = null;
 
@@ -26,6 +27,10 @@ namespace DNWS
     public String Filename
     {
       get { return _filename;}
+    }
+    public String Path
+    {
+      get { return _path;}
     }
 
     public String Body
@@ -71,6 +76,7 @@ namespace DNWS
       _url = statusLine[1];
       String[] urls = Regex.Split(_url, "/");
       _filename = urls[urls.Length - 1];
+      _path = urls[1];
       String[] parts = Regex.Split(_filename, "[?]");
       if (parts.Length > 1 && parts[1].Contains('&'))
       {

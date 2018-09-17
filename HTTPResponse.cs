@@ -54,8 +54,10 @@ namespace DNWS
                         headerResponse.Append("500 Internal Server Error");
                         break;
                     case 501:
+                    default:
                         headerResponse.Append("501 Not Implemented");
                         break;
+
                 }
 
                 headerResponse.Append("\r\n");
