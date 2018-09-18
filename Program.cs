@@ -131,18 +131,18 @@ namespace DNWS
             try
             {
                 response = new HTTPResponse(200);
-                response.type = fileType;
-                response.body = System.IO.File.ReadAllBytes(path);
+                response.Type = fileType;
+                response.Body = System.IO.File.ReadAllBytes(path);
             }
             catch (FileNotFoundException ex)
             {
                 response = new HTTPResponse(404);
-                response.body = Encoding.UTF8.GetBytes("<h1>404 Not found</h1>" + ex.Message);
+                response.Body = Encoding.UTF8.GetBytes("<h1>404 Not found</h1>" + ex.Message);
             }
             catch (Exception ex)
             {
                 response = new HTTPResponse(500);
-                response.body = Encoding.UTF8.GetBytes("<h1>500 Internal Server Error</h1>" + ex.Message);
+                response.Body = Encoding.UTF8.GetBytes("<h1>500 Internal Server Error</h1>" + ex.Message);
             }
             return response;
 
@@ -209,9 +209,9 @@ namespace DNWS
                 }
             }
             // Generate response
-            ns.Write(Encoding.UTF8.GetBytes(response.header), 0, response.header.Length);
-            if(response.body != null) {
-              ns.Write(response.body, 0, response.body.Length);
+            ns.Write(Encoding.UTF8.GetBytes(response.Header), 0, response.Header.Length);
+            if(response.Body != null) {
+              ns.Write(response.Body, 0, response.Body.Length);
             }
 
             // Shuting down

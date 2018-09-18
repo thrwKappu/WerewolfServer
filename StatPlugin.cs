@@ -38,7 +38,7 @@ namespace DNWS
       }
       sb.Append("</body></html>");
       response = new HTTPResponse(200);
-      response.body = Encoding.UTF8.GetBytes(sb.ToString());
+      response.Body = Encoding.UTF8.GetBytes(sb.ToString());
       return response;
     }
 

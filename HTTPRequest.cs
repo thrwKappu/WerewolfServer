@@ -62,11 +62,15 @@ namespace DNWS
         _status = 401;
         return;
       }
-      if (!statusLine[0].ToLower().Equals("get"))
+      if (statusLine[0].ToLower().Equals("get"))
       {
         _method = "GET";
-      } else if(!statusLine[0].ToLower().Equals("post")) {
+      } else if(statusLine[0].ToLower().Equals("post")) {
         _method = "POST";
+      } else if(statusLine[0].ToLower().Equals("put")) {
+        _method = "PUT";
+      } else if(statusLine[0].ToLower().Equals("delete")) {
+        _method = "DELETE";
       } else {
         _status = 501;
         return;

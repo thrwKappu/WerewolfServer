@@ -10,28 +10,33 @@ namespace DNWS
     public class HTTPResponse
     {
         protected int _status = 404;
-        public int status
+        public int Status
         {
             get { return _status; }
             set { _status = value; }
         }
 
         protected byte[] _body;
-        public byte[] body
+        public byte[] Body
         {
             get { return _body; }
             set { _body = value; }
         }
 
+        public void SetBodyString(string str)
+        {
+            Body = Encoding.UTF8.GetBytes(str);
+        }
+
 
         protected string _type = "text/html";
-        public string type
+        public string Type
         {
             get { return _type; }
             set { _type = value; }
         }
 
-        public String header
+        public String Header
         {
             get
             {
@@ -61,7 +66,7 @@ namespace DNWS
                 }
 
                 headerResponse.Append("\r\n");
-                headerResponse.Append("Content-Type: ").Append(type).Append("\r\n");
+                headerResponse.Append("Content-Type: ").Append(Type).Append("\r\n");
                 headerResponse.Append("Connection: close\r\n");
                 headerResponse.Append("Server: DNWS 1.0\r\n");
                 headerResponse.Append("\r\n");
