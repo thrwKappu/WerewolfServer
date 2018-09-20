@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace DNWS
 {
@@ -28,6 +29,18 @@ namespace DNWS
             Body = Encoding.UTF8.GetBytes(str);
         }
 
+        public void SetBodyJson(Object obj)
+        {
+            string json = JsonConvert.SerializeObject(obj,
+                                Newtonsoft.Json.Formatting.None,
+                                new JsonSerializerSettings
+                                {
+                                    NullValueHandling = NullValueHandling.Ignore
+                                });
+            obj = null;
+            SetBodyString(json);
+        }
+
 
         protected string _type = "text/html";
         public string Type
@@ -45,6 +58,9 @@ namespace DNWS
                 {
                     case 200:
                         headerResponse.Append("200 OK");
+                        break;
+                    case 201:
+                        headerResponse.Append("201 Created");
                         break;
                     case 400:
                         headerResponse.Append("400 Bad Request");

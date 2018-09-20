@@ -37,11 +37,11 @@ namespace DNWS.Werewolf
         }
         public WerewolfContext()
         {
-            if (!_created) {
-                _created = true;
-                Database.EnsureDeleted();
-                Database.EnsureCreated();
-            }
+            // if (!_created) {
+            //     _created = true;
+            //     Database.EnsureDeleted();
+            //     Database.EnsureCreated();
+            // }
         }
     }
 }

@@ -24,6 +24,7 @@ namespace DNWS.Werewolf
     /// <summary>
     /// 
     /// </summary>
+    [Serializable]
     [DataContract]
     public partial class Player : IEquatable<Player>
     { 
