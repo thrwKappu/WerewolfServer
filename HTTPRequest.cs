@@ -20,6 +20,9 @@ namespace DNWS
 
         protected String _method;
 
+        public const string CONTENT_TYPE_APP_X_HTTP_FORM_URLENCODED = "application/x-www-form-urlencoded";
+        public const string CONTENT_TYPE_APP_JSON = "application/json";
+
         public String Url
         {
             get { return _url; }
@@ -65,24 +68,9 @@ namespace DNWS
                 _status = 401;
                 return;
             }
-            if (statusLine[0].ToLower().Equals("get"))
-            {
-                _method = "GET";
-            }
-            else if (statusLine[0].ToLower().Equals("post"))
-            {
-                _method = "POST";
-            }
-            else if (statusLine[0].ToLower().Equals("put"))
-            {
-                _method = "PUT";
-            }
-            else if (statusLine[0].ToLower().Equals("delete"))
-            {
-                _method = "DELETE";
-            }
-            else
-            {
+            if ((new [] {"get", "post", "put", "delete"}).Contains(statusLine[0].ToLower())) {
+                _method = statusLine[0].ToUpper();
+            } else {
                 _status = 501;
                 return;
             }
@@ -114,29 +102,52 @@ namespace DNWS
             if (lines.Length == 1) return;
             string contentType = null;
             StringBuilder bodyBuilder = new StringBuilder();
+            bool isHeader = true;
             for (int i = 1; i != lines.Length; i++)
             {
-                String[] pair = Regex.Split(lines[i], ": "); //FIXME
-                if (pair.Length == 0) continue;
-                if (pair.Length == 1)
+                if (isHeader)
                 {
-                    if (contentType == "application/x-www-form-urlencoded")
+                    String[] pair = Regex.Split(lines[i], ":"); //FIXME
+                    pair = pair.Where(x => !string.IsNullOrEmpty(x)).ToArray();
+                    if (pair.Length == 0) continue;
+                    if (pair.Length == 1)
+                    {
+                        isHeader = false;
+                        continue;
+                    }
+                    else
+                    { // Length == 2, GET url request
+                        if(pair.Length > 2) {
+                            pair[1] = String.Join(":", pair, 1, pair.Length - 1);
+                        }
+                        pair[1] = pair[1].Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
+                        addProperty(pair[0].Trim(), pair[1].Trim());
+                        //FIXME: Another quick hack, this rely on HTTP specification, so it should always work, hopefully
+                        if (pair[0].Trim().ToLower() == "content-type") {
+                            contentType = pair[1].Trim().ToLower();
+                        }
+                    }
+                }
+                else
+                {
+                    if (lines[i] == "") {
+                        continue;
+                    }
+                    if (contentType == CONTENT_TYPE_APP_X_HTTP_FORM_URLENCODED)
                     { // handle post body, but we should skip json body
+                        String[] pair = Regex.Split(lines[i], ":"); //FIXME
+                        pair = pair.Where(x => !string.IsNullOrEmpty(x)).ToArray();
                         if (pair[0].Length > 1)
                         { //FIXME, this is a quick hack
                             Dictionary<String, String> _bodys = pair[0].Split('&').Select(x => x.Split('=')).ToDictionary(x => x[0].ToLower(), x => x[1]);
                             _requestListDictionary = _requestListDictionary.Concat(_bodys).ToDictionary(x => x.Key, x => x.Value);
                         }
-                    } else if (contentType == "application/json") {
-                      bodyBuilder.Append(pair[0]);
                     }
-                }
-                else
-                { // Length == 2, GET url request
-                    pair[1] = pair[1].Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
-                    addProperty(pair[0], pair[1]);
-                    //FIXME: Another quick hack, this rely on HTTP specification, so it should always work, hopefully
-                    contentType = getPropertyByKey("Content-Type");
+                    else if (contentType == CONTENT_TYPE_APP_JSON)
+                    {
+                        bodyBuilder.Append(lines[i]);
+                    }
+
                 }
             }
             if (contentType == "application/json") {

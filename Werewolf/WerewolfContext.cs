@@ -30,18 +30,23 @@ namespace DNWS.Werewolf
                 .HasOne(ar => ar.Role)
                 .WithMany(a => a.ActionRoles)
                 .HasForeignKey(ar => ar.RoleId);
+            modelBuilder.Entity<Player>()
+                .HasOne(p => p.Game)
+                .WithMany(g => g.Players)
+                .HasForeignKey(p => p.GameId);
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlite("Data Source=werewolf.db");
+            optionsBuilder.EnableSensitiveDataLogging();
         }
         public WerewolfContext()
         {
-            // if (!_created) {
-            //     _created = true;
-            //     Database.EnsureDeleted();
-            //     Database.EnsureCreated();
-            // }
+            if (!_created) {
+                _created = true;
+                Database.EnsureDeleted();
+                Database.EnsureCreated();
+            }
         }
     }
 }
