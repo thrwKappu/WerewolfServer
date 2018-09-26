@@ -6,6 +6,7 @@ using System.Net;
 using System.IO;
 using Microsoft.Extensions.Configuration;
 using System.Threading;
+using DNWS.Werewolf;
 
 namespace DNWS
 {
@@ -27,6 +28,9 @@ namespace DNWS
             var builder = new ConfigurationBuilder();
             builder.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("config.json");
             Configuration = builder.Build();
+            // FIXME: refactor this into separate plugin system
+            WerewolfManager wm = new WerewolfManager();
+            wm.Start();
             DotNetWebServer ws = DotNetWebServer.GetInstance(this);
             ws.Start();
         }

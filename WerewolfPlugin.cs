@@ -49,9 +49,12 @@ namespace DNWS
                         try
                         {
                             List<Player> players = werewolf.GetPlayers().OrderBy(p => p.Id).ToList();
-                            foreach(Player player in players) {
+                            foreach (Player player in players)
+                            {
+                                player.Role = null;
                                 player.Session = "";
                                 player.Password = "";
+                                player.Game = null;
                             }
                             response.SetBodyJson(players);
                             return response;
@@ -69,8 +72,10 @@ namespace DNWS
                         try
                         {
                             Player player = werewolf.GetPlayer(id);
+                            player.Role = null;
                             player.Session = "";
                             player.Password = "";
+                            player.Game = null;
                             response.SetBodyJson(player);
                             return response;
                         }
@@ -106,12 +111,13 @@ namespace DNWS
                             string gameid = requests[2];
                             try
                             {
-                            List<Player> players = werewolf.GetPlayerByGame(gameid).OrderBy(p => p.Id).ToList();
-                            foreach(Player player in players) {
-                                player.Session = "";
-                                player.Password = "";
-                            }
-                            response.SetBodyJson(players);
+                                List<Player> players = werewolf.GetPlayerByGame(gameid).OrderBy(p => p.Id).ToList();
+                                foreach (Player player in players)
+                                {
+                                    player.Session = "";
+                                    player.Password = "";
+                                }
+                                response.SetBodyJson(players);
                                 return response;
 
                             }
@@ -131,7 +137,8 @@ namespace DNWS
                         try
                         {
                             Player player = JsonConvert.DeserializeObject<Player>(httpRequest.Body);
-                            if (werewolf.IsPlayerExists(player.Name)) {
+                            if (werewolf.IsPlayerExists(player.Name))
+                            {
                                 response.Status = 403;
                                 return response;
                             }
@@ -163,7 +170,7 @@ namespace DNWS
                                     Player player = werewolf.GetPlayerByName(p.Name);
                                     if (player.Password != p.Password || player.Name != p.Name)
                                     {
-                                        response.SetBodyString("User not found or password is incorrect.");
+                                        response.SetBodyString("{\"error\":\"User not found or password is incorrect.\"}");
                                         response.Status = 404;
                                         return response;
 
@@ -177,7 +184,7 @@ namespace DNWS
                                 }
                                 catch (Exception ex)
                                 {
-                                    response.SetBodyString("User not found or password is incorrect.");
+                                    response.SetBodyString("{\"error\":\"User not found or password is incorrect.\"}");
                                     response.Status = 404;
                                     return response;
                                 }
@@ -253,6 +260,7 @@ namespace DNWS
                             {
                                 player.Role = null;
                                 player.Password = "";
+                                player.Session = "";
                                 player.Game = null;
                             }
                         }
@@ -287,6 +295,8 @@ namespace DNWS
                         {
                             player.Role = null;
                             player.Password = "";
+                            player.Session = "";
+                            player.Game = null;
                         }
                         try
                         {
@@ -300,16 +310,13 @@ namespace DNWS
                             return response;
                         }
                     }
-                }
-                else if (action == HTTP_POST)
-                {
-                    if (request_length == 3) //game/session/{sessionID}
+                    else if (request_length == 3) //game/session/{sessionID}
                     {
                         if (requests[1].ToUpper() == "SESSION")
                         {
                             Game game;
-                            string sessionID = requests[2];
                             Player player;
+                            string sessionID = requests[2];
                             try
                             {
                                 player = werewolf.GetPlayerBySession(sessionID);
@@ -322,6 +329,53 @@ namespace DNWS
                                 return response;
                             }
                             try {
+                                game = player.Game;
+                                foreach(Player p in game.Players)
+                                {
+                                    if (p.Id != player.Id)
+                                    {
+                                        p.Role = null;
+                                    } else {
+                                        p.Role.ActionRoles = null;
+                                    }
+                                    p.Password = "";
+                                    p.Session = "";
+                                    p.Game = null;
+                                }
+                                response.Status = 201;
+                                response.SetBodyJson(game);
+                                return response;
+                            } catch (Exception ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 400;
+                                return response;
+                            }
+                        }
+                    }
+                }
+                else if (action == HTTP_POST)
+                {
+                    if (request_length == 3) //game/session/{sessionID}
+                    {
+                        if (requests[1].ToUpper() == "SESSION")
+                        {
+                            Game game;
+                            Player player;
+                            string sessionID = requests[2];
+                            try
+                            {
+                                player = werewolf.GetPlayerBySession(sessionID);
+                            }
+                            catch (Exception ex)
+                            {
+                                // Player not found
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 404;
+                                return response;
+                            }
+                            try
+                            {
                                 lock (werewolf)
                                 {
                                     // No game, create one
@@ -342,7 +396,8 @@ namespace DNWS
                                     }
                                     game = werewolf.JoinGame(game, player);
                                     List<Player> players = game.Players.ToList();
-                                    foreach (Player p in players) {
+                                    foreach (Player p in players)
+                                    {
                                         p.Role = null;
                                         p.Password = "";
                                         p.Session = "";
@@ -357,6 +412,41 @@ namespace DNWS
                             {
                                 Console.WriteLine(ex.ToString());
                                 response.Status = 400;
+                                return response;
+                            }
+                        }
+                    }
+                    else if (request_length == 5)
+                    { //game/action/{sessionID}/{actionID}/{targetID}'
+                        if (requests[1].ToUpper() == "ACTION")
+                        {
+                            string sessionID = requests[2];
+                            string actionID = requests[3];
+                            string targetID = requests[4];
+                            try
+                            {
+                                string outcome = werewolf.PostAction(sessionID, actionID, targetID);
+                                if (outcome == WerewolfGame.OUTCOME_REVEALED)
+                                {
+                                    Player target = werewolf.GetPlayer(targetID);
+                                    response.SetBodyString("{\"outcome\":\"revealed\",\"role\":\"{" + target.Role.Name + "}\"}");
+                                }
+                                else if (outcome == WerewolfGame.OUTCOME_ENCHANTED)
+                                {
+                                    response.SetBodyString("{\"outcome\":\"revealed\",\"role\":\"{" + WerewolfGame.ROLE_ALPHA_WEREWOLF + "}\"}");
+                                }
+                                else
+                                {
+                                    response.SetBodyString("{\"outcome\":\"" + outcome + "\"}");
+                                }
+                                response.Status = 201;
+                                return response;
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.SetBodyString("{\"error\":\"" + ex.ToString() + "\"}");
+                                response.Status = 404;
                                 return response;
                             }
                         }
@@ -399,7 +489,8 @@ namespace DNWS
                                 response.Status = 404;
                                 return response;
                             }
-                            if (player.Game == null) {
+                            if (player.Game == null)
+                            {
                                 response.Status = 403;
                                 return response;
                             }
@@ -586,8 +677,8 @@ namespace DNWS
                         }
                         catch (Exception ex)
                         {
-                            response.SetBodyString(ex.ToString());
-                            response.Status = 500;
+                            Console.WriteLine(ex.ToString());
+                            response.Status = 400;
                             return response;
                         }
                         //Flatten action list

@@ -62,7 +62,7 @@ namespace DNWS.Werewolf
         /// Gets or Sets Role
         /// </summary>
         [DataMember(Name="role")]
-        public long? Role { get; set; }
+        public Role Role { get; set; }
 
         /// <summary>
         /// Gets or Sets Session

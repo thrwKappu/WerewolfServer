@@ -78,6 +78,30 @@ namespace DNWS.Werewolf
         [DataMember(Name="status")]
         public StatusEnum? Status { get; set; }
 
+        public enum PeriodEnum
+        { 
+            /// <summary>
+            /// Enum DayEnum for day
+            /// </summary>
+            [EnumMember(Value = "day")]
+            DayEnum = 1,
+            
+            /// <summary>
+            /// Enum NightEnum for night
+            /// </summary>
+            [EnumMember(Value = "night")]
+            NightEnum = 2,
+
+            /// <summary>
+            /// Enum ProcessingEnum for processing
+            /// </summary>
+            [EnumMember(Value = "processing")]
+            ProcessingEnum = 3,
+        }
+
+        [DataMember(Name="period")]
+        public PeriodEnum? Period { get; set; }
+
         [DataMember(Name="players")]
         public virtual ICollection<Player> Players {get; set;}
 
