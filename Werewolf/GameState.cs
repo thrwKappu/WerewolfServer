@@ -43,7 +43,7 @@ namespace DNWS.Werewolf
         private int _bodyguard_hit = 0;
         public int BodyguardHit {get => _bodyguard_hit; set => _bodyguard_hit = value;}
         private Player _target_by_head_hunter = null;
-        public Player TargetByHeadHunter {set => _target_by_head_hunter = value;}
+        public Player TargetByHeadHunter {get => _target_by_head_hunter; set => _target_by_head_hunter = value;}
         private Player _revive_by_medium = null;
         public Player ReviveByMedium {get => _revive_by_medium; set => _revive_by_medium = value;}
         private Dictionary<Player, Player> _dayVoteList;
@@ -71,6 +71,7 @@ namespace DNWS.Werewolf
             FoolWin = 3,
             HeadHunterWin = 4,
             SerialKillerWin = 5,
+            NoWin = 6,
         }
         [NotMapped]
         [JsonProperty("Outcome")]

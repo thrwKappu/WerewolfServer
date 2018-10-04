@@ -40,6 +40,7 @@ namespace DNWS.Werewolf
             //optionsBuilder.UseSqlite("Data Source=werewolf.db");
             optionsBuilder.UseMySQL("server=localhost;database=werewolf;user=werewolf;password=werewolf;SslMode=none");
             optionsBuilder.EnableSensitiveDataLogging();
+            // optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
         }
         public WerewolfContext()
         {

@@ -108,6 +108,8 @@ namespace DNWS.Werewolf
         public Game()
         {
             Players = new HashSet<Player>();
+            ResetDayVoteList();
+            ResetNightVoteList();
         }
     }
 }

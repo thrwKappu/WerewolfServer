@@ -25,7 +25,7 @@ namespace DNWS.Werewolf
         }
         public long GameId
         {
-            get {return _gameid; }
+            get { return _gameid; }
         }
         public WerewolfEvent(int e, long g)
         {
@@ -33,7 +33,7 @@ namespace DNWS.Werewolf
             _gameid = g;
         }
     }
-    partial class WerewolfGame : IObservable<WerewolfEvent>
+    public partial class WerewolfGame : IObservable<WerewolfEvent>
     {
         public const string OUTCOME_TARGET_DEAD = "Target Dead";
         public const string OUTCOME_PLAYER_DEAD = "Player Dead";
@@ -41,10 +41,13 @@ namespace DNWS.Werewolf
         public const string OUTCOME_NOTHING = "Nothing Happended";
         public const string OUTCOME_PERFORMED = "Action Performed";
         public const string OUTCOME_ENCHANTED = "Enchanted";
+        public const string OUTCOME_JAILED = "Jailed";
         public const string OUTCOME_REVEALED = "Revealed";
         public const string OUTCOME_AURA_UNKOWN = "Unknown";
         public const string OUTCOME_AURA_WEREWOLF = "Werewolf";
         public const string OUTCOME_AURA_VILLAGER = "Villager";
+        public const string OUTCOME_NOT_VALID = "Not Valid Action";
+        public const string OUTCOME_TARGET_NOT_ALIVED = "Target Is Not Alived";
         internal class Unsubscriber<BaggageInfo> : IDisposable
         {
             private List<IObserver<BaggageInfo>> _observers;
@@ -62,17 +65,16 @@ namespace DNWS.Werewolf
                     _observers.Remove(_observer);
             }
         }
-        private static WerewolfGame _instance = null;
         private static bool _roleInitialized = false;
         private static bool _actionInitialized = false;
-        WerewolfContext _db = null;
-        private Int64 _currentGameId = 0;
+        private static Int64 _currentGameId = 0;
         public static int MAX_PLAYERS = 2;
         public static int GAME_COUNTDOWN_PERIOD = 5;
         public static int GAME_DAY_PERIOD = 10;
         public static int GAME_NIGHT_PERIOD = 10;
+        private static WerewolfContext _db;
 
-        private List<IObserver<WerewolfEvent>> observers;
+        private static List<IObserver<WerewolfEvent>> observers = null;
 
         public Int64 CurrentGameId
         {
@@ -85,24 +87,12 @@ namespace DNWS.Werewolf
                 _currentGameId = value;
             }
         }
-        public static WerewolfGame GetInstance()
+        public WerewolfGame(WerewolfContext db)
         {
-            if (_instance == null)
-            {
-                _instance = new WerewolfGame();
-            }
-            return _instance;
-        }
-
-        private WerewolfGame()
-        {
+            // DI
+            _db = db;
             try
             {
-                if (_db == null)
-                {
-                    _db = new WerewolfContext();
-                }
-                //FIXME, should move to database init part
                 if (!_roleInitialized)
                 {
                     InitRoles();
@@ -111,11 +101,15 @@ namespace DNWS.Werewolf
                 {
                     InitActions();
                 }
-                observers = new List<IObserver<WerewolfEvent>>();
+                //FIXME, should move to database init part
             }
             catch (Exception ex)
             {
                 Console.Out.WriteLine(ex.ToString());
+            }
+            if (observers == null)
+            {
+                observers = new List<IObserver<WerewolfEvent>>();
             }
         }
 
@@ -135,32 +129,45 @@ namespace DNWS.Werewolf
         }
         public List<Game> GetGames()
         {
-            return DeepClone<List<Game>>(_db.Games.ToList());
+            return DeepClone<List<Game>>(_db.Games.Include(game => game.Players).ToList());
         }
         public Game GetGame(string id)
         {
             long lid = Int64.Parse(id);
-            return DeepClone<Game>(_db.Games.Where(game => game.GameId == lid).Single());
-            //return _db.Games.Where(game => game.GameId == lid).Single();
+            return DeepClone<Game>(_db.Games.Include(game => game.Players).ThenInclude(player => player.Role).Where(game => game.GameId == lid).ToList()[0]);
         }
         public void SetGameDay(string id, int day)
         {
             long lid = Int64.Parse(id);
-            Game g = _db.Games.Where(game => game.GameId == lid).Single();
+            Game g = _db.Games.Where(game => game.GameId == lid).ToList()[0];
             g.Day = day;
             _db.SaveChanges();
         }
         public void SetGamePeriod(string id, Game.PeriodEnum p)
         {
             long lid = Int64.Parse(id);
-            Game g = _db.Games.Where(game => game.GameId == lid).Single();
+            Game g = _db.Games.Where(game => game.GameId == lid).ToList()[0];
             g.Period = p;
+            _db.SaveChanges();
+        }
+        public void SetGameOutcome(string id, Game.OutcomeEnum o)
+        {
+            long lid = Int64.Parse(id);
+            Game g = _db.Games.Where(game => game.GameId == lid).ToList()[0];
+            g.Outcome = o;
+            _db.SaveChanges();
+        }
+        public void SetGameStatus(string id, Game.StatusEnum s)
+        {
+            long lid = Int64.Parse(id);
+            Game g = _db.Games.Where(game => game.GameId == lid).ToList()[0];
+            g.Status = s;
             _db.SaveChanges();
         }
         public void StartGame(string id)
         {
             long lid = Int64.Parse(id);
-            Game game = _db.Games.Where(g => g.GameId == lid).FirstOrDefault();
+            Game game = _db.Games.Where(g => g.GameId == lid).ToList()[0];
             if (game != null)
             {
                 game.Status = Game.StatusEnum.PlayingEnum;
@@ -178,7 +185,7 @@ namespace DNWS.Werewolf
         public void DeleteGame(string id)
         {
             long lid = Int64.Parse(id);
-            Game game = _db.Games.Where(g => g.GameId == lid).FirstOrDefault();
+            Game game = _db.Games.Where(g => g.GameId == lid).ToList()[0];
             if (game != null)
             {
                 _db.Games.Remove(game);
@@ -195,7 +202,7 @@ namespace DNWS.Werewolf
             Game game = new Game();
             game.Hash = Guid.NewGuid().ToString();
             game.Status = Game.StatusEnum.WaitingEnum;
-            game.Players = new List<Player>();
+            //game.Players = new List<Player>();
             game.Period = Game.PeriodEnum.ProcessingEnum;
             _db.Games.Add(game);
             _db.SaveChanges();
@@ -204,7 +211,7 @@ namespace DNWS.Werewolf
         }
         public Game JoinGame(Game g, Player p)
         {
-            Game game = _db.Games.Where(_g => _g.GameId == g.GameId).Single();
+            Game game = _db.Games.Where(_g => _g.GameId == g.GameId).Include(_game => _game.Players).ToList()[0];
             if (game.Status != Game.StatusEnum.WaitingEnum)
             {
                 throw new Exception("Game is already ended or running");
@@ -214,8 +221,7 @@ namespace DNWS.Werewolf
             {
                 throw new Exception("Game is fulled already");
             }
-            Player player = _db.Players.Where(_p => _p.Id == p.Id).Single();
-
+            Player player = _db.Players.Where(_p => _p.Id == p.Id).ToList()[0];
             if (players.Contains(player))
             {
                 throw new Exception("User in game already");
@@ -232,9 +238,9 @@ namespace DNWS.Werewolf
         }
         public Game LeaveGame(Game g, Player p)
         {
-            Game game = _db.Games.Where(_g => _g.GameId == g.GameId).Single();
+            Game game = _db.Games.Where(_g => _g.GameId == g.GameId).ToList()[0];
             List<Player> players = game.Players.ToList();
-            Player player = _db.Players.Where(_p => _p.Id == p.Id).Single();
+            Player player = _db.Players.Where(_p => _p.Id == p.Id).ToList()[0];
             players.Remove(player);
             player.Status = Player.StatusEnum.NotInGameEnum;
             game.Players = players;
@@ -250,11 +256,11 @@ namespace DNWS.Werewolf
         public Player GetPlayer(string id)
         {
             long lid = Int64.Parse(id);
-            return DeepClone<Player>(_db.Players.Where(player => player.Id == lid).Single());
+            return DeepClone<Player>(_db.Players.Where(player => player.Id == lid).ToList()[0]);
         }
         public Player GetPlayerByName(string name)
         {
-            return DeepClone<Player>(_db.Players.Where(player => player.Name.ToUpper() == name.ToUpper()).Single());
+            return DeepClone<Player>(_db.Players.Where(player => player.Name.ToUpper() == name.ToUpper()).ToList()[0]);
         }
         public Boolean IsPlayerExists(string name)
         {
@@ -266,12 +272,13 @@ namespace DNWS.Werewolf
         }
         public Player GetPlayerBySession(string session)
         {
-            return DeepClone<Player>(_db.Players.Where(player => player.Session == session).Single());
+            return DeepClone<Player>(_db.Players.Where(player => player.Session == session).Include(player => player.Game).ThenInclude(game => game.Players).ThenInclude(p => p.Role).ThenInclude(r => r.ActionRoles).ToList()[0]);
         }
         public List<Player> GetPlayerByGame(string gameid)
         {
             long gid = Int64.Parse(gameid);
-            return DeepClone<List<Player>>(_db.Games.Where(game => game.GameId == gid).Include(game => game.Players).Single().Players.ToList());
+            Game _game = _db.Games.Where(game => game.GameId == gid).Include(game => game.Players).ToList()[0];
+            return DeepClone<List<Player>>(_game.Players.ToList());
         }
         public void AddPlayer(Player player)
         {
@@ -280,7 +287,7 @@ namespace DNWS.Werewolf
         }
         public void UpdatePlayer(Player player)
         {
-            Player p = _db.Players.Where(pr => pr.Id == player.Id).FirstOrDefault();
+            Player p = _db.Players.Where(pr => pr.Id == player.Id).ToList()[0];
             if (p == null)
             {
                 throw new Exception("User not found");
@@ -293,8 +300,9 @@ namespace DNWS.Werewolf
             {
                 p.Password = player.Password;
                 p.Session = player.Session;
-                if (player.Role != null) {
-                    p.Role = _db.Roles.Where(r => r.Id == player.Role.Id).Single();
+                if (player.Role != null)
+                {
+                    p.Role = _db.Roles.Where(r => r.Id == player.Role.Id).ToList()[0];
                 }
                 _db.Players.Update(p);
                 _db.SaveChanges();
@@ -307,7 +315,7 @@ namespace DNWS.Werewolf
         public void DeletePlayer(string id)
         {
             long lid = Int64.Parse(id);
-            Player player = _db.Players.Where(p => p.Id == lid).FirstOrDefault();
+            Player player = _db.Players.Where(p => p.Id == lid).ToList()[0];
             if (player != null)
             {
                 _db.Players.Remove(player);
@@ -318,27 +326,32 @@ namespace DNWS.Werewolf
             }
             _db.SaveChanges();
         }
+        public void SetPlayerStatus(string id, Player.StatusEnum status)
+        {
+            long lid = Int64.Parse(id);
+            Player player = _db.Players.Where(p => p.Id == lid).ToList()[0];
+            player.Status = status;
+            _db.SaveChanges();
+        }
         public List<Action> GetActions()
         {
             return DeepClone<List<Action>>(_db.Actions.Include(ar => ar.ActionRoles).ThenInclude(r => r.Role).ToList());
         }
-
         public Action GetAction(string id)
         {
             // Throws exception
             long lid = Int64.Parse(id);
-            return DeepClone<Action>(_db.Actions.Where(action => action.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(r => r.Role).Single());
+            return DeepClone<Action>(_db.Actions.Where(action => action.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(r => r.Role).ToList()[0]);
         }
         private Action GetActionByName(string name)
         {
-            return DeepClone<Action>(_db.Actions.Where(action => action.Name == name).Single());
+            return DeepClone<Action>(_db.Actions.Where(action => action.Name == name).ToList()[0]);
         }
         public List<Action> GetActionByRoleId(string id)
         {
             long lid = Int64.Parse(id);
             return DeepClone<List<Action>>(_db.Actions.Where(action => action.Roles.Any(role => role.Id == lid)).ToList());
         }
-
         public List<Role> GetRoles()
         {
             return DeepClone<List<Role>>(_db.Roles.Include(ar => ar.ActionRoles).ThenInclude(a => a.Action).ToList());
@@ -347,11 +360,11 @@ namespace DNWS.Werewolf
         {
             // Throws exception
             long lid = Int64.Parse(id);
-            return DeepClone<Role>(_db.Roles.Where(role => role.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(a => a.Action).Single());
+            return DeepClone<Role>(_db.Roles.Where(role => role.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(a => a.Action).ToList()[0]);
         }
         public Role GetRoleByName(string name)
         {
-            return DeepClone<Role>(_db.Roles.Where(role => role.Name == name).First());
+            return DeepClone<Role>(_db.Roles.Where(role => role.Name == name).ToList()[0]);
         }
         public string PostAction(string sessionID, string actionID, string targetID)
         {
@@ -361,28 +374,31 @@ namespace DNWS.Werewolf
             DNWS.Werewolf.Action action;
             Role role;
 
-            try {
+            try
+            {
                 player = GetPlayerBySession(sessionID);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw new Exception("Player not found.");
             }
             if (player.Status != Player.StatusEnum.AliveEnum)
             {
-                throw new Exception("Player is not alived.");
+                return OUTCOME_TARGET_NOT_ALIVED;
             }
-            try {
+            try
+            {
                 action = GetAction(actionID);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw new Exception("Action not found.");
             }
-            try {
+            try
+            {
                 target = GetPlayer(targetID);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw new Exception("Target not found.");
             }
@@ -415,7 +431,7 @@ namespace DNWS.Werewolf
             {
                 if (target.Status != Player.StatusEnum.AliveEnum)
                 {
-                    throw new Exception("Target is not alived.");
+                    return OUTCOME_TARGET_NOT_ALIVED;
                 }
                 if (action.Name == WerewolfGame.ACTION_DAY_VOTE)
                 {
@@ -423,7 +439,7 @@ namespace DNWS.Werewolf
                     {
                         game.DayVoteList.Remove(player);
                     }
-                    else 
+                    else
                     {
                         game.DayVoteList[player] = target;
                     }
@@ -455,7 +471,7 @@ namespace DNWS.Werewolf
                 }
                 else if (action.Name == WerewolfGame.ACTION_SHOOT)
                 {
-                    target.Status = Player.StatusEnum.DeadEnum;
+                    SetPlayerStatus(target.Id.ToString(), Player.StatusEnum.DeadEnum);
                     return OUTCOME_TARGET_DEAD;
                 }
                 else if (action.Name == WerewolfGame.ACTION_HOLYWATER)
@@ -465,19 +481,23 @@ namespace DNWS.Werewolf
                                 WerewolfGame.ROLE_WEREWOLF_SEER,
                                 WerewolfGame.ROLE_WEREWOLF_SHAMAN}).Contains(target.Role.Name))
                     {
-                        target.Status = Player.StatusEnum.DeadEnum;
+                        SetPlayerStatus(target.Id.ToString(), Player.StatusEnum.DeadEnum);
                         return OUTCOME_TARGET_DEAD;
                     }
                     else
                     {
-                        player.Status = Player.StatusEnum.DeadEnum;
+                        SetPlayerStatus(player.Id.ToString(), Player.StatusEnum.DeadEnum);
                         return OUTCOME_PLAYER_DEAD;
                     }
                 }
             }
-            else if(game.Period == Game.PeriodEnum.NightEnum)
+            else if (game.Period == Game.PeriodEnum.NightEnum)
             {
-                if (action.Name == WerewolfGame.ACTION_REVIVE) 
+                if (game.Jailed != null && player.Id == game.Jailed.Id)
+                {
+                    return OUTCOME_PERFORMED;
+                }
+                if (action.Name == WerewolfGame.ACTION_REVIVE)
                 {
                     if (target.Status != Player.StatusEnum.DeadEnum)
                     {
@@ -503,7 +523,7 @@ namespace DNWS.Werewolf
                     {
                         game.NightVoteList.Remove(player);
                     }
-                    else 
+                    else
                     {
                         game.NightVoteList[player] = target;
                     }
@@ -525,11 +545,11 @@ namespace DNWS.Werewolf
                 {
                     if (game.HealedByDoctor == target)
                     {
-                        game.HealedByDoctor =  null;
+                        game.HealedByDoctor = null;
                     }
                     else
                     {
-                        game.HealedByDoctor =  target;
+                        game.HealedByDoctor = target;
                     }
                     return OUTCOME_PERFORMED;
                 }
@@ -547,7 +567,8 @@ namespace DNWS.Werewolf
                 }
                 else if (action.Name == WerewolfGame.ACTION_REVEAL)
                 {
-                    if (target == game.Enchanted) {
+                    if (target == game.Enchanted)
+                    {
                         return OUTCOME_ENCHANTED;
                     }
                     return OUTCOME_REVEALED;
@@ -576,9 +597,8 @@ namespace DNWS.Werewolf
                     return OUTCOME_AURA_VILLAGER;
                 }
             }
-            throw new Exception("Not valid action.");
+            return OUTCOME_NOT_VALID;
         }
-
         public IDisposable Subscribe(IObserver<WerewolfEvent> observer)
         {
             if (!observers.Contains(observer))

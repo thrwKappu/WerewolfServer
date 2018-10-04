@@ -33,7 +33,7 @@ namespace DNWS
         protected HTTPResponse WerewolfProcess(HTTPRequest httpRequest,string[] requests, string method)
         {
             HTTPResponse response = new HTTPResponse(200);
-            WerewolfGame werewolf = WerewolfGame.GetInstance();
+            WerewolfGame werewolf = new WerewolfGame(new WerewolfContext());
             string path = requests[0].ToUpper();
             string action = method.ToUpper();
             int request_length = requests.Length;
@@ -182,7 +182,7 @@ namespace DNWS
                                     response.Status = 201;
                                     return response;
                                 }
-                                catch (Exception ex)
+                                catch (Exception)
                                 {
                                     response.SetBodyString("{\"error\":\"User not found or password is incorrect.\"}");
                                     response.Status = 404;
@@ -329,20 +329,32 @@ namespace DNWS
                                 return response;
                             }
                             try {
+                                if (player == null)
+                                {
+                                    response.Status = 404;
+                                    return response;
+                                }
                                 game = player.Game;
-                                foreach(Player p in game.Players)
+                                if (game == null)
+                                {
+                                    response.Status = 404;
+                                    return response;
+                                }
+                                foreach (Player p in game.Players)
                                 {
                                     if (p.Id != player.Id)
                                     {
                                         p.Role = null;
-                                    } else {
+                                    }
+                                    else
+                                    {
                                         p.Role.ActionRoles = null;
                                     }
                                     p.Password = "";
                                     p.Session = "";
                                     p.Game = null;
                                 }
-                                response.Status = 201;
+                                response.Status = 200;
                                 response.SetBodyJson(game);
                                 return response;
                             } catch (Exception ex)

@@ -18,10 +18,10 @@ namespace DNWS.Werewolf
             private string gameId;
             private int timeCounter;
             private WerewolfGame werewolf;
-            public GameManager(Game game)
+            public GameManager(WerewolfGame werewolf, Game game)
             {
-                Game _game = game;
-                werewolf = WerewolfGame.GetInstance();
+                this.werewolf = werewolf;
+                Game _game = werewolf.GetGame(game.GameId.ToString());
                 gameId = game.GameId.ToString();
                 werewolf.SetGameDay(gameId, 0);
                 werewolf.SetGamePeriod(gameId, Game.PeriodEnum.NightEnum);
@@ -29,9 +29,38 @@ namespace DNWS.Werewolf
                 // set player role;
                 List<Player> players = _game.Players.ToList();
                 int playerCount = players.Count;
-                List<string> roles = WerewolfGame.ROLE_LIST.ToList();
-                int roleCount = roles.Count;
+                List<string> roles = null;
                 Random rand = new Random();
+                if (playerCount == 16)
+                {
+                    // 50% chances to be Fool game or Head hunter game
+                    if (rand.Next(2)%2 == 0) {
+                        roles = WerewolfGame.ROLE_LIST_16_FOOL.ToList();
+                    } else {
+                        roles = WerewolfGame.ROLE_LIST_16_HEAD_HUNTER.ToList();
+                    }
+                }
+                else if (playerCount == 15)
+                {
+                    if (rand.Next(2)%2 == 0) {
+                        roles = WerewolfGame.ROLE_LIST_15_FOOL.ToList();
+                    } else {
+                        roles = WerewolfGame.ROLE_LIST_15_HEAD_HUNTER.ToList();
+                    }
+                }
+                else if (playerCount == 14)
+                {
+                    if (rand.Next(2)%2 == 0) {
+                        roles = WerewolfGame.ROLE_LIST_14_FOOL.ToList();
+                    } else {
+                        roles = WerewolfGame.ROLE_LIST_14_HEAD_HUNTER.ToList();
+                    }
+                }
+                else if (playerCount == 2) // for testing purpose
+                {
+                    roles = WerewolfGame.ROLE_LIST_2.ToList();
+                }
+                int roleCount = roles.Count;
                 int pos;
                 foreach(Player player in _game.Players)
                 {
@@ -42,19 +71,68 @@ namespace DNWS.Werewolf
                     roles.RemoveAt(pos);
                     roleCount--;
                 }
+                //TODO random head-hunter target, must be villager team
+            }
+            private Game.OutcomeEnum CheckWinner()
+            {
+                lock(this)
+                {
+                    Game _game = werewolf.GetGame(gameId);
+                    List<Player> survivers = _game.Players.Where(x => x.Status == Player.StatusEnum.AliveEnum).ToList();
+                    if (survivers.Count == 1)
+                    {
+                        if (survivers[0].Role.Name == WerewolfGame.ROLE_SERIAL_KILLER)
+                        {
+                            werewolf.SetGameStatus(_game.GameId.ToString(), Game.StatusEnum.EndedEnum);
+                            return Game.OutcomeEnum.SerialKillerWin;
+                        }
+                        else if (survivers[0].Role.Name == WerewolfGame.ROLE_FOOL)
+                        {
+                            werewolf.SetGameStatus(_game.GameId.ToString(), Game.StatusEnum.EndedEnum);
+                            return Game.OutcomeEnum.FoolWin;
+                        }
+                    }
+                    int countWerewolfTeam = survivers.Where(x => x.Role.Type == Role.TypeEnum.WolfEnum).Count();
+                    int countVillagerTeam = survivers.Where(x => x.Role.Type == Role.TypeEnum.VillagerEnum).Count();
+                    // Headhunt 
+                    if (_game.TargetByHeadHunter != null && werewolf.GetPlayer(_game.TargetByHeadHunter.Id.ToString()).Status == Player.StatusEnum.DeadEnum)
+                    {
+                        countVillagerTeam = countVillagerTeam += survivers.Where(x => x.Role.Name == WerewolfGame.ROLE_HEAD_HUNTER).Count();
+                    }
+                    if (countWerewolfTeam > countVillagerTeam)
+                    {
+                        werewolf.SetGameStatus(_game.GameId.ToString(), Game.StatusEnum.EndedEnum);
+                        return Game.OutcomeEnum.WerewolfWin;
+                    }
+                    else if (countWerewolfTeam == 0)
+                    {
+                        werewolf.SetGameStatus(_game.GameId.ToString(), Game.StatusEnum.EndedEnum);
+                        return Game.OutcomeEnum.VillagerWin;
+                    }
+                    return Game.OutcomeEnum.NoWin;
+
+                }
             }
             public void OnTimedEvent(object stateInfo)
             {
-                Game _game = WerewolfGame.GetInstance().GetGame(gameId);
-                if (_game.Status == Game.StatusEnum.PlayingEnum)
+                lock (this)
                 {
-                    if (_game.Period == Game.PeriodEnum.ProcessingEnum)
+                    Game _game = werewolf.GetGame(gameId);
+                    if (_game.Status == Game.StatusEnum.EndedEnum)
                     {
-                        werewolf.SetGamePeriod(gameId, Game.PeriodEnum.NightEnum);
+                        Timer t = (Timer)stateInfo;
+                        Console.WriteLine("Ending game {0}.", _game.GameId);
+                        t.Dispose();
+                        return;
                     }
-                    Console.WriteLine("Game[{0}]: OnTimedEvent", _game.GameId);
-                    lock (this)
+                    werewolf.SetGameOutcome(gameId, Game.OutcomeEnum.NoWin);
+                    if (_game.Status == Game.StatusEnum.PlayingEnum)
                     {
+                        if (_game.Period == Game.PeriodEnum.ProcessingEnum)
+                        {
+                            werewolf.SetGamePeriod(gameId, Game.PeriodEnum.NightEnum);
+                        }
+                        Console.WriteLine("Game[{0}]: OnTimedEvent", _game.GameId);
                         timeCounter++;
                         if (_game.Period == Game.PeriodEnum.NightEnum && timeCounter >= WerewolfGame.GAME_NIGHT_PERIOD)
                         {
@@ -62,7 +140,7 @@ namespace DNWS.Werewolf
                             // End of the night, revive a player
                             if (_game.ReviveByMedium != null)
                             {
-                                _game.ReviveByMedium.Status = Player.StatusEnum.AliveEnum;
+                                werewolf.SetPlayerStatus(_game.ReviveByMedium.Id.ToString(), Player.StatusEnum.AliveEnum);
                             }
                             _game.ReviveByMedium = null;
                             // check who will be killed by wolf.
@@ -79,18 +157,18 @@ namespace DNWS.Werewolf
                                 }
                             }
                             Player maxVote = voteCount.FirstOrDefault(x => x.Value == voteCount.Values.Max()).Key;
-                            if (maxVote != null && maxVote == _game.ProtectedByBodyguard)
+                            if (maxVote != null && maxVote.Id == _game.ProtectedByBodyguard.Id)
                             {
                                 _game.BodyguardHit--;
                                 if (_game.BodyguardHit == 0)
                                 {
                                     Player bodyguard = _game.Players.Where(p => p.Role.Name == WerewolfGame.ROLE_BODYGUARD).Single();
-                                    bodyguard.Status = Player.StatusEnum.DeadEnum;
+                                    werewolf.SetPlayerStatus(bodyguard.Id.ToString(), Player.StatusEnum.DeadEnum);
                                 }
                             }
                             else if (maxVote != null && maxVote != _game.HealedByDoctor)
                             {
-                                maxVote.Status = Player.StatusEnum.DeadEnum;
+                                werewolf.SetPlayerStatus(maxVote.Id.ToString(), Player.StatusEnum.DeadEnum);
                             }
                             _game.ResetNightVoteList();
                             // Serial killer's victim
@@ -101,15 +179,16 @@ namespace DNWS.Werewolf
                                 if (_game.BodyguardHit == 0)
                                 {
                                     Player bodyguard = _game.Players.Where(p => p.Role.Name == WerewolfGame.ROLE_BODYGUARD).Single();
-                                    bodyguard.Status = Player.StatusEnum.DeadEnum;
+                                    werewolf.SetPlayerStatus(bodyguard.Id.ToString(), Player.StatusEnum.DeadEnum);
                                 }
                             }
                             else if (victim != _game.HealedByDoctor)
                             {
-                                _game.KillBySerialKiller.Status = Player.StatusEnum.DeadEnum;
+                                werewolf.SetPlayerStatus(_game.KillBySerialKiller.Id.ToString(), Player.StatusEnum.DeadEnum);
                             }
                             _game.KillBySerialKiller = null;
                             timeCounter = 0;
+                            werewolf.SetGameOutcome(gameId, CheckWinner());
                             werewolf.SetGamePeriod(gameId, Game.PeriodEnum.DayEnum);
                         }
                         else if (_game.Period == Game.PeriodEnum.DayEnum && timeCounter >= WerewolfGame.GAME_DAY_PERIOD)
@@ -129,11 +208,25 @@ namespace DNWS.Werewolf
                                 }
                             }
                             Player maxVote = voteCount.FirstOrDefault(x => x.Value == voteCount.Values.Max()).Key;
-                            if(maxVote != null) {
-                                maxVote.Status = Player.StatusEnum.DeadEnum;
+                            if (maxVote != null)
+                            {
+                                werewolf.SetPlayerStatus(maxVote.Id.ToString(), Player.StatusEnum.DeadEnum);
+                                if (maxVote.Role.Name == WerewolfGame.ROLE_FOOL)
+                                {
+                                    //TODO Fool win, stop game 
+                                    _game.Outcome = Game.OutcomeEnum.FoolWin;
+                                }
+                                if (_game.TargetByHeadHunter.Id == maxVote.Id)
+                                {
+                                    _game.Outcome = Game.OutcomeEnum.HeadHunterWin;
+                                }
                             }
                             _game.ResetDayVoteList();
 
+                            if (CheckWinner() == Game.OutcomeEnum.WerewolfWin)
+                            {
+                                //TODO Werewolf win, 
+                            }
                             timeCounter = 0;
                             werewolf.SetGameDay(gameId, (int)_game.Day + 1);
                             werewolf.SetGamePeriod(gameId, Game.PeriodEnum.NightEnum);
@@ -151,7 +244,6 @@ namespace DNWS.Werewolf
             }
         }
 
-        private System.Timers.Timer _timer;
         private List<Game> gameList;
         private List<Timer> timerList;
         private WerewolfGame werewolf;
@@ -159,7 +251,7 @@ namespace DNWS.Werewolf
         {
             gameList = new List<Game>();
             timerList = new List<Timer>();
-            werewolf = WerewolfGame.GetInstance();
+            werewolf = new WerewolfGame(new WerewolfContext());
         }
         public void Start()
         {
@@ -195,10 +287,11 @@ namespace DNWS.Werewolf
                     }
                     break;
                 case WerewolfEvent.GAME_STARTED:
-                    GameManager gm = new GameManager(game);
+                    GameManager gm = new GameManager(new WerewolfGame(new WerewolfContext()), game);
                     AutoResetEvent autoEvent = new AutoResetEvent(false);
                     Console.WriteLine("Game {0} started, waiting for 5 seconds count down", game.GameId);
-                    Timer timer = new Timer(gm.OnTimedEvent, autoEvent, WerewolfGame.GAME_COUNTDOWN_PERIOD * 1000, 1000);
+                    Timer timer = new Timer(new TimerCallback(gm.OnTimedEvent));
+                    timer.Change(WerewolfGame.GAME_COUNTDOWN_PERIOD * 1000, 1000);
                     timerList.Add(timer);
                     break;
             }
