@@ -1,0 +1,955 @@
+{
+	"info": {
+		"_postman_id": "280b8305-1d22-4115-ba41-10623dac4b35",
+		"name": "Werewolf Test Set",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Actions",
+			"item": [
+				{
+					"name": "Empty action -> 400",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "13e105c4-05ab-407f-9aa2-f119caafba32",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get actions -> 200",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "184f8fd0-709f-461a-b2c9-bccdd4f0995e",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check action 0\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData[0].id).to.eql(1);",
+									"    pm.expect(jsonData[0].name).to.eql(\"Day Vote\");",
+									"});",
+									"",
+									"pm.test(\"Ceck action 0 role 4\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData[0].Roles[0].id).to.eql(1);",
+									"    pm.expect(jsonData[0].Roles[0].name).to.eql(\"Seer\");",
+									"});",
+									"",
+									"pm.test(\"Check action 7\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData[6].id).to.eql(7);",
+									"    pm.expect(jsonData[6].name).to.eql(\"Guard\");",
+									"});",
+									"",
+									"pm.test(\"Ceck action 7 role 0\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData[6].Roles[0].id).to.eql(10);",
+									"    pm.expect(jsonData[6].Roles[0].name).to.eql(\"Bodyguard\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/action/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"action",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get action 1-> 200",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ffb082b7-7b5c-414d-907b-55b3cd9affb5",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Your test name\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.eql(1);",
+									"    pm.expect(jsonData.name).to.eql(\"Day Vote\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/action/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"action",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Roles",
+			"item": [
+				{
+					"name": "Get role list -> 200",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6896710c-9204-48a9-b847-461712a6dead",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Your test name\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData[0].id).to.eql(1);",
+									"    pm.expect(jsonData[0].name).to.eql(\"Seer\");",
+									"});",
+									"",
+									"pm.test(\"Your test name\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData[0].Actions[0].id).to.eql(1);",
+									"    pm.expect(jsonData[0].Actions[0].name).to.eql(\"Day Vote\");",
+									"});",
+									"",
+									"pm.test(\"Your test name\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData[13].id).to.eql(14);",
+									"    pm.expect(jsonData[13].name).to.eql(\"Serial Killer\");",
+									"});",
+									"",
+									"pm.test(\"Your test name\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData[13].Actions[0].id).to.eql(1);",
+									"    pm.expect(jsonData[13].Actions[0].name).to.eql(\"Day Vote\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/role/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"role",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get role 1 -> 200",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ab672755-3b29-40b1-b46b-886fe2b94c19",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Your test name\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.eql(1);",
+									"    pm.expect(jsonData.name).to.eql(\"Seer\");",
+									"});",
+									"",
+									"",
+									"pm.test(\"Your test name\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.Actions[0].id).to.eql(1);",
+									"    pm.expect(jsonData.Actions[0].name).to.eql(\"Day Vote\");",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/role/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"role",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get role 14 -> 200",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4dcef380-0110-4c92-8e45-ce9fb61242b7",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check ID and Name\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.eql(14);",
+									"    pm.expect(jsonData.name).to.eql(\"Serial Killer\");",
+									"});",
+									"",
+									"pm.test(\"Check Action\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.Actions[0].id).to.eql(1);",
+									"    pm.expect(jsonData.Actions[0].name).to.eql(\"Day Vote\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/role/14",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"role",
+								"14"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Players",
+			"item": [
+				{
+					"name": "Get All Players -> empty",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "eef3a8ee-8907-4fe2-a8af-200be3078767",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Empty array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.length).to.eql(0);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/player/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"player",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Player Pruet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f2eda8d8-1a9e-4db6-9904-2e3c69366af0",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.response.to.have.status(201);",
+									"    pm.environment.set(\"pruet_id\", jsonData.id );",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"name\":\"pruet\",\n\t\"password\":\"Qwertyu8\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/player/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"player",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Players  -> 1/pruet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a9ba7f34-975f-4d9f-ba9f-8ffbc6776926",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Only pruet\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.length).to.eql(1);",
+									"    pm.expect(jsonData[0].id).to.eql(pm.environment.get(\"pruet_id\"));",
+									"    pm.expect(jsonData[0].name).to.eql(\"pruet\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/player/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"player",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Change Pruet Password",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ebfae82e-fd79-4465-9912-ba82425ec3e4",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"name\":\"pruet\",\n\t\"id\": \"{{pruet_id}}\",\n\t\"password\":\"abcdef\",\n\t\"status\":4\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/player/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"player",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login pruet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8807dcf8-0480-4ba1-a88c-5766bf7d9aa3",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.response.to.have.status(201);",
+									"    pm.environment.set(\"pruet_session\", jsonData.session );",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"name\":\"pruet\",\n\t\"password\":\"abcdef\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/player/login/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"player",
+								"login",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pruet join game",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ecee4b75-934a-4857-a30e-a1b235636861",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Pruet is logged in\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.players.length).to.eql(1);",
+									"    pm.expect(jsonData.players[0].id).to.eql(pm.environment.get(\"pruet_id\"));",
+									"    pm.expect(jsonData.players[0].name).to.eql(\"pruet\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/game/session/{{pruet_session}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"game",
+								"session",
+								"{{pruet_session}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pruet leave game",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "84f51d40-bf01-42eb-8110-dd982a0c6a08",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Your test name\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.players.length).to.eql(0);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/game/session/{{pruet_session}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"game",
+								"session",
+								"{{pruet_session}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/player/logout/{{pruet_session}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"player",
+								"logout",
+								"{{pruet_session}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Player Pruet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "dcdfbecb-15b3-45ec-80b1-6f513cf0152d",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/player/{{pruet_id}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"player",
+								"{{pruet_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Players -> empty again",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "eef3a8ee-8907-4fe2-a8af-200be3078767",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Empty array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.length).to.eql(0);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/player/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"player",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test Interaction",
+			"item": [
+				{
+					"name": "Create Player Lulu",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"name\":\"lulu\",\n\t\"password\":\"lulu\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/player/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"player",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create player pruet",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"name\":\"pruet\",\n\t\"password\":\"Qwertyu8\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/player/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"player",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login lulu",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6a07b270-f95d-4ccf-91c1-6a10dd1303b7",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.response.to.have.status(201);",
+									"    pm.environment.set(\"lulu_session\", jsonData.session );",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"name\":\"lulu\",\n\t\"password\":\"lulu\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/player/login/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"player",
+								"login",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "pruet login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4b8a5967-2a3d-4d68-b49d-c3e09e517d93",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.response.to.have.status(201);",
+									"    pm.environment.set(\"pruet_session\", jsonData.session );",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"name\":\"pruet\",\n\t\"password\":\"Qwertyu8\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/player/login/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"player",
+								"login",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pruet join game",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/game/session/{{pruet_session}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"game",
+								"session",
+								"{{pruet_session}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Lulu join game",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/werewolf/game/session/{{lulu_session}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"werewolf",
+								"game",
+								"session",
+								"{{lulu_session}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

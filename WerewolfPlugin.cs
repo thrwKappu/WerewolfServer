@@ -86,7 +86,7 @@ namespace DNWS
                             return response;
                         }
                     }
-                    else if (request_length == 3) //player/logout/{id}
+                    else if (request_length == 3) //player/logout/{sessionID}
                     {
                         if (requests[1].ToUpper() == "LOGOUT")
                         {
@@ -244,7 +244,7 @@ namespace DNWS
                         List<DNWS.Werewolf.Game> games;
                         try
                         {
-                            games = werewolf.GetGames().OrderBy(a => a.GameId).ToList();
+                            games = werewolf.GetGames().OrderBy(a => a.Id).ToList();
                         }
                         catch (Exception ex)
                         {
@@ -293,7 +293,7 @@ namespace DNWS
                         catch (Exception ex)
                         {
                             Console.WriteLine(ex.ToString());
-                            response.Status = 400;
+                            response.Status = 404;
                             return response;
                         }
                         List<Player> players = new List<Player>();
@@ -331,13 +331,13 @@ namespace DNWS
                             {
                                 // Player not found
                                 Console.WriteLine(ex.ToString());
-                                response.Status = 404;
+                                response.Status = 400;
                                 return response;
                             }
                             try {
                                 if (player == null)
                                 {
-                                    response.Status = 404;
+                                    response.Status = 400;
                                     return response;
                                 }
                                 game = player.Game;
@@ -404,7 +404,7 @@ namespace DNWS
                                     if (werewolf.CurrentGameId == 0)
                                     {
                                         game = werewolf.CreateGame();
-                                        werewolf.CurrentGameId = (long)game.GameId;
+                                        werewolf.CurrentGameId = (long)game.Id;
                                     }
                                     else
                                     {
@@ -413,7 +413,7 @@ namespace DNWS
                                         if (game.Players.Count >= WerewolfGame.MAX_PLAYERS || game.Status == Game.StatusEnum.EndedEnum)
                                         {
                                             game = werewolf.CreateGame();
-                                            werewolf.CurrentGameId = (long)game.GameId;
+                                            werewolf.CurrentGameId = (long)game.Id;
                                         }
                                     }
                                     game = werewolf.JoinGame(game, player);
@@ -468,7 +468,7 @@ namespace DNWS
                             {
                                 Console.WriteLine(ex.ToString());
                                 response.SetBodyString("{\"error\":\"" + ex.ToString() + "\"}");
-                                response.Status = 404;
+                                response.Status = 400;
                                 return response;
                             }
                         }
@@ -488,9 +488,10 @@ namespace DNWS
                         catch (Exception ex)
                         {
                             Console.WriteLine(ex.ToString());
-                            response.Status = 404;
+                            response.Status = 400;
                             return response;
                         }
+                        response.Status = 200;
                         return response;
                     }
                     else if (request_length == 3) //game/session/{sessionID}
@@ -513,14 +514,14 @@ namespace DNWS
                             }
                             if (player.Game == null)
                             {
-                                response.Status = 403;
+                                response.Status = 404;
                                 return response;
                             }
                             try
                             {
                                 lock (werewolf)
                                 {
-                                    game = werewolf.GetGame(player.Game.GameId.ToString());
+                                    game = werewolf.GetGame(player.Game.Id.ToString());
                                     game = werewolf.LeaveGame(game, player);
                                 }
                                 response.Status = 200;
@@ -551,7 +552,7 @@ namespace DNWS
                         catch (Exception ex)
                         {
                             response.SetBodyString(ex.ToString());
-                            response.Status = 500;
+                            response.Status = 400;
                             return response;
                         }
                         //Flatten action list
@@ -568,13 +569,14 @@ namespace DNWS
                         }
                         try
                         {
+                            response.Status = 200;
                             response.SetBodyJson(roles);
                             return response;
                         }
                         catch (Exception ex)
                         {
                             Console.WriteLine(ex.ToString());
-                            response.Status = 500;
+                            response.Status = 400;
                             return response;
                         }
                     }
@@ -602,6 +604,7 @@ namespace DNWS
                         role.ActionRoles = null;
                         try
                         {
+                            response.Status = 200;
                             response.SetBodyJson(role);
                             return response;
                         }
@@ -679,6 +682,7 @@ namespace DNWS
                         act.ActionRoles = null;
                         try
                         {
+                            response.Status = 200;
                             response.SetBodyJson(act);
                             return response;
                         }
@@ -689,41 +693,45 @@ namespace DNWS
                             return response;
                         }
                     }
-                    else if (request_length == 3 && requests[1].ToUpper() == "FINDBYROLE")
+                    else if (request_length == 3)
                     {
-                        string roleid = requests[2];
-                        List<DNWS.Werewolf.Action> actions;
-                        try
+                        if (requests[1].ToUpper() == "FINDBYROLE")
                         {
-                            actions = werewolf.GetActionByRoleId(roleid).OrderBy(a => a.Id).ToList();
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex.ToString());
-                            response.Status = 400;
-                            return response;
-                        }
-                        //Flatten action list
-                        foreach (DNWS.Werewolf.Action act in actions)
-                        {
-                            List<Role> roles = new List<Role>();
-                            foreach (ActionRole ar in act.ActionRoles)
+                            string roleid = requests[2];
+                            List<DNWS.Werewolf.Action> actions;
+                            try
                             {
-                                ar.Action.ActionRoles = null;
-                                roles.Add(ar.Role);
+                                actions = werewolf.GetActionByRoleId(roleid).OrderBy(a => a.Id).ToList();
                             }
-                            act.Roles = roles.OrderBy(r => r.Id).ToList();
-                            act.ActionRoles = null;
-                        }
-                        try {
-                            response.SetBodyJson(actions);
-                            return response;
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex.ToString());
-                            response.Status = 400;
-                            return response;
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 400;
+                                return response;
+                            }
+                            //Flatten action list
+                            foreach (DNWS.Werewolf.Action act in actions)
+                            {
+                                List<Role> roles = new List<Role>();
+                                foreach (ActionRole ar in act.ActionRoles)
+                                {
+                                    ar.Action.ActionRoles = null;
+                                    roles.Add(ar.Role);
+                                }
+                                act.Roles = roles.OrderBy(r => r.Id).ToList();
+                                act.ActionRoles = null;
+                            }
+                            try
+                            {
+                                response.SetBodyJson(actions);
+                                return response;
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 400;
+                                return response;
+                            }
                         }
                     }
                 }

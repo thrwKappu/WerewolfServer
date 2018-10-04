@@ -49,7 +49,7 @@ namespace DNWS.Werewolf
         [DataMember(Name="actionrole")]
         public virtual ICollection<ActionRole> ActionRoles { get; set; }
         [NotMapped]
-        [JsonProperty("Roles")]
+        [JsonProperty("roles")]
         public List<Role> Roles {get; set;}
 
         /// <summary>

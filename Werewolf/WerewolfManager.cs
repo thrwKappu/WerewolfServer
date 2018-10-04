@@ -21,8 +21,8 @@ namespace DNWS.Werewolf
             public GameManager(WerewolfGame werewolf, Game game)
             {
                 this.werewolf = werewolf;
-                Game _game = werewolf.GetGame(game.GameId.ToString());
-                gameId = game.GameId.ToString();
+                Game _game = werewolf.GetGame(game.Id.ToString());
+                gameId = game.Id.ToString();
                 werewolf.SetGameDay(gameId, 0);
                 werewolf.SetGamePeriod(gameId, Game.PeriodEnum.NightEnum);
                 timeCounter = 0;
@@ -83,12 +83,12 @@ namespace DNWS.Werewolf
                     {
                         if (survivers[0].Role.Name == WerewolfGame.ROLE_SERIAL_KILLER)
                         {
-                            werewolf.SetGameStatus(_game.GameId.ToString(), Game.StatusEnum.EndedEnum);
+                            werewolf.SetGameStatus(_game.Id.ToString(), Game.StatusEnum.EndedEnum);
                             return Game.OutcomeEnum.SerialKillerWin;
                         }
                         else if (survivers[0].Role.Name == WerewolfGame.ROLE_FOOL)
                         {
-                            werewolf.SetGameStatus(_game.GameId.ToString(), Game.StatusEnum.EndedEnum);
+                            werewolf.SetGameStatus(_game.Id.ToString(), Game.StatusEnum.EndedEnum);
                             return Game.OutcomeEnum.FoolWin;
                         }
                     }
@@ -101,12 +101,12 @@ namespace DNWS.Werewolf
                     }
                     if (countWerewolfTeam > countVillagerTeam)
                     {
-                        werewolf.SetGameStatus(_game.GameId.ToString(), Game.StatusEnum.EndedEnum);
+                        werewolf.SetGameStatus(_game.Id.ToString(), Game.StatusEnum.EndedEnum);
                         return Game.OutcomeEnum.WerewolfWin;
                     }
                     else if (countWerewolfTeam == 0)
                     {
-                        werewolf.SetGameStatus(_game.GameId.ToString(), Game.StatusEnum.EndedEnum);
+                        werewolf.SetGameStatus(_game.Id.ToString(), Game.StatusEnum.EndedEnum);
                         return Game.OutcomeEnum.VillagerWin;
                     }
                     return Game.OutcomeEnum.NoWin;
@@ -121,7 +121,7 @@ namespace DNWS.Werewolf
                     if (_game.Status == Game.StatusEnum.EndedEnum)
                     {
                         Timer t = (Timer)stateInfo;
-                        Console.WriteLine("Ending game {0}.", _game.GameId);
+                        Console.WriteLine("Ending game {0}.", _game.Id);
                         t.Dispose();
                         return;
                     }
@@ -132,7 +132,7 @@ namespace DNWS.Werewolf
                         {
                             werewolf.SetGamePeriod(gameId, Game.PeriodEnum.NightEnum);
                         }
-                        Console.WriteLine("Game[{0}]: OnTimedEvent", _game.GameId);
+                        Console.WriteLine("Game[{0}]: OnTimedEvent", _game.Id);
                         timeCounter++;
                         if (_game.Period == Game.PeriodEnum.NightEnum && timeCounter >= WerewolfGame.GAME_NIGHT_PERIOD)
                         {
@@ -233,11 +233,11 @@ namespace DNWS.Werewolf
                         }
                         if (_game.Period == Game.PeriodEnum.NightEnum)
                         {
-                            Console.WriteLine("Game[{0}]: Night time of day {1} @ {2}", _game.GameId, _game.Day, timeCounter);
+                            Console.WriteLine("Game[{0}]: Night time of day {1} @ {2}", _game.Id, _game.Day, timeCounter);
                         }
                         else
                         {
-                            Console.WriteLine("Game[{0}]: Day time of day {1} @ {2}", _game.GameId, _game.Day, timeCounter);
+                            Console.WriteLine("Game[{0}]: Day time of day {1} @ {2}", _game.Id, _game.Day, timeCounter);
                         }
                     }
                 }
@@ -282,14 +282,14 @@ namespace DNWS.Werewolf
                 case WerewolfEvent.PLAYER_JOIN:
                     if (game.Players.Count >= WerewolfGame.MAX_PLAYERS)
                     {
-                        Console.WriteLine("Start game {0}", game.GameId);
-                        werewolf.StartGame(game.GameId.ToString());
+                        Console.WriteLine("Start game {0}", game.Id);
+                        werewolf.StartGame(game.Id.ToString());
                     }
                     break;
                 case WerewolfEvent.GAME_STARTED:
                     GameManager gm = new GameManager(new WerewolfGame(new WerewolfContext()), game);
                     AutoResetEvent autoEvent = new AutoResetEvent(false);
-                    Console.WriteLine("Game {0} started, waiting for 5 seconds count down", game.GameId);
+                    Console.WriteLine("Game {0} started, waiting for 5 seconds count down", game.Id);
                     Timer timer = new Timer(new TimerCallback(gm.OnTimedEvent));
                     timer.Change(WerewolfGame.GAME_COUNTDOWN_PERIOD * 1000, 1000);
                     timerList.Add(timer);

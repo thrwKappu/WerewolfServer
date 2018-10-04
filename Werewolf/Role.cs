@@ -27,7 +27,7 @@ namespace DNWS.Werewolf
     /// </summary>
     [Serializable]
     [DataContract]
-    public partial class Role
+    public class Role
     { 
         /// <summary>
         /// Gets or Sets Id
@@ -55,15 +55,35 @@ namespace DNWS.Werewolf
         [DataMember(Name="actionrole")]
         public virtual ICollection<ActionRole> ActionRoles { get; set; }
         [NotMapped]
-        [JsonProperty("Actions")]
+        [JsonProperty("actions")]
         public List<Action> Actions {get; set;}
 
-        public virtual ICollection<Player> Players {get; set;}
-
-        public Role()
+        public enum TypeEnum
+        { 
+            /// <summary>
+            ///
+            /// </summary>
+            [EnumMember(Value = "Villager")]
+            VillagerEnum = 1,
+            
+            /// <summary>
+            ///
+            /// </summary>
+            [EnumMember(Value = "Wolf")]
+            WolfEnum = 2,
+            
+            /// <summary>
+            ///
+            /// </summary>
+            [EnumMember(Value = "Neutral")]
+            NeutralEnum = 3,
+        }
+        [Required]
+        [DataMember(Name="type")]
+        public TypeEnum? Type { get; set; }
+       public Role()
         {
             this.ActionRoles = new HashSet<ActionRole>();
-            this.Players = new HashSet<Player>();
         }
     }
 }

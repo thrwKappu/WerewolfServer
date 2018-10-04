@@ -31,8 +31,8 @@ namespace DNWS.Werewolf
         /// <summary>
         /// Gets or Sets Id
         /// </summary>
-        [DataMember(Name="gameid")]
-        public long GameId { get; set; }
+        [DataMember(Name="id")]
+        public long Id { get; set; }
 
         /// <summary>
         /// Gets or Sets Hash
@@ -98,20 +98,26 @@ namespace DNWS.Werewolf
             [EnumMember(Value = "processing")]
             ProcessingEnum = 3,
         }
+        [DataMember(Name="period")]
+        public PeriodEnum? Period { get; set; }
         public enum OutcomeEnum
         {
+            [EnumMember(Value = "villagerwin")]
             VillagerWin = 1,
+            [EnumMember(Value = "werewolfwin")]
             WerewolfWin = 2,
+            [EnumMember(Value = "foolwin")]
             FoolWin = 3,
+            [EnumMember(Value = "headhunterwin")]
             HeadHunterWin = 4,
+            [EnumMember(Value = "serialkillerwin")]
             SerialKillerWin = 5,
+            [EnumMember(Value = "nowin")]
             NoWin = 6,
         }
         [DataMember(Name="outcome")]
         public OutcomeEnum? Outcome {get; set;}
 
-        [DataMember(Name="period")]
-        public PeriodEnum? Period { get; set; }
 
         [DataMember(Name="players")]
         public virtual ICollection<Player> Players {get; set;}
