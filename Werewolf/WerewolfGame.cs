@@ -256,7 +256,28 @@ namespace DNWS.Werewolf
         public Player GetPlayer(string id)
         {
             long lid = Int64.Parse(id);
-            return DeepClone<Player>(_db.Players.Where(player => player.Id == lid).ToList()[0]);
+            return DeepClone<Player>(_db.Players.Where(player => player.Id == lid).Include(player => player.Role).ToList()[0]);
+        }
+        public bool IsPlayerDead(string id)
+        {
+            var deadReasonArray = new[]
+            {
+                Player.StatusEnum.VoteDeadEnum,
+                Player.StatusEnum.ShotDeadEnum,
+                Player.StatusEnum.JailDeadEnum,
+                Player.StatusEnum.HolyDeadEnum,
+                Player.StatusEnum.KillDeadEnum,
+            };
+            long lid = Int64.Parse(id);
+            Player player = _db.Players.Where(_p => _p.Id == lid).ToList()[0];
+            foreach (Player.StatusEnum reason in deadReasonArray)
+            {
+                if (player.Status == reason)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
         public Player GetPlayerByName(string name)
         {
@@ -272,7 +293,13 @@ namespace DNWS.Werewolf
         }
         public Player GetPlayerBySession(string session)
         {
-            return DeepClone<Player>(_db.Players.Where(player => player.Session == session).Include(player => player.Game).ThenInclude(game => game.Players).ThenInclude(p => p.Role).ThenInclude(r => r.ActionRoles).ToList()[0]);
+            //return DeepClone<Player>(_db.Players.Where(player => player.Session == session).Include(player => player.Game).ThenInclude(game => game.Players).ThenInclude(p => p.Role).ThenInclude(r => r.ActionRoles).ToList()[0]);
+            List<Player> players = _db.Players.Where(player => player.Session == session).Include(player => player.Game).ThenInclude(game => game.Players).ThenInclude(p => p.Role).ThenInclude(r => r.ActionRoles).ToList();
+            if (players.Count > 0)
+            {
+                return DeepClone<Player>(players[0]);
+            }
+            throw new Exception();
         }
         public List<Player> GetPlayerByGame(string gameid)
         {
@@ -350,7 +377,8 @@ namespace DNWS.Werewolf
         public List<Action> GetActionByRoleId(string id)
         {
             long lid = Int64.Parse(id);
-            return DeepClone<List<Action>>(_db.Actions.Where(action => action.Roles.Any(role => role.Id == lid)).ToList());
+            //return DeepClone<List<Action>>(_db.Actions.Where(action => action.Roles.Any(role => role.RoleId == lid)).ToList());
+            return DeepClone<List<Action>>(_db.Roles.Where(r => r.Id == lid).ToList()[0].Actions.ToList());
         }
         public List<Role> GetRoles()
         {
@@ -384,7 +412,7 @@ namespace DNWS.Werewolf
             }
             if (player.Status != Player.StatusEnum.AliveEnum)
             {
-                return OUTCOME_TARGET_NOT_ALIVED;
+                throw new Exception("Player is not alived.");
             }
             try
             {
@@ -402,6 +430,10 @@ namespace DNWS.Werewolf
             {
                 throw new Exception("Target not found.");
             }
+            if (target.Id == player.Id)
+            {
+                throw new Exception("You can't perform on yourself.");
+            }
             game = GetGame(player.Game.GameId.ToString());
             if (game == null)
             {
@@ -417,7 +449,7 @@ namespace DNWS.Werewolf
             {
                 throw new Exception("Player does not have any role.");
             }
-            List<int?> action_ids = role.ActionRoles.Select(ar => ar.Action.Id).ToList();
+            List<int> action_ids = role.ActionRoles.Select(ar => ar.Action.Id).ToList();
             //if (!role.Actions.Contains(action))
             if (!action_ids.Contains(action.Id))
             {
@@ -471,7 +503,7 @@ namespace DNWS.Werewolf
                 }
                 else if (action.Name == WerewolfGame.ACTION_SHOOT)
                 {
-                    SetPlayerStatus(target.Id.ToString(), Player.StatusEnum.DeadEnum);
+                    SetPlayerStatus(target.Id.ToString(), Player.StatusEnum.ShotDeadEnum);
                     return OUTCOME_TARGET_DEAD;
                 }
                 else if (action.Name == WerewolfGame.ACTION_HOLYWATER)
@@ -481,12 +513,12 @@ namespace DNWS.Werewolf
                                 WerewolfGame.ROLE_WEREWOLF_SEER,
                                 WerewolfGame.ROLE_WEREWOLF_SHAMAN}).Contains(target.Role.Name))
                     {
-                        SetPlayerStatus(target.Id.ToString(), Player.StatusEnum.DeadEnum);
+                        SetPlayerStatus(target.Id.ToString(), Player.StatusEnum.HolyDeadEnum);
                         return OUTCOME_TARGET_DEAD;
                     }
                     else
                     {
-                        SetPlayerStatus(player.Id.ToString(), Player.StatusEnum.DeadEnum);
+                        SetPlayerStatus(player.Id.ToString(), Player.StatusEnum.HolyDeadEnum);
                         return OUTCOME_PLAYER_DEAD;
                     }
                 }
@@ -499,7 +531,7 @@ namespace DNWS.Werewolf
                 }
                 if (action.Name == WerewolfGame.ACTION_REVIVE)
                 {
-                    if (target.Status != Player.StatusEnum.DeadEnum)
+                    if (IsPlayerDead(target.Id.ToString()))
                     {
                         throw new Exception("Target is not dead.");
                     }

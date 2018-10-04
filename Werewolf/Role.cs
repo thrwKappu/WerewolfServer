@@ -32,8 +32,9 @@ namespace DNWS.Werewolf
         /// <summary>
         /// Gets or Sets Id
         /// </summary>
+        [Key]
         [DataMember(Name="id")]
-        public int? Id { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// Gets or Sets Name
@@ -57,9 +58,12 @@ namespace DNWS.Werewolf
         [JsonProperty("Actions")]
         public List<Action> Actions {get; set;}
 
+        public virtual ICollection<Player> Players {get; set;}
+
         public Role()
         {
             this.ActionRoles = new HashSet<ActionRole>();
+            this.Players = new HashSet<Player>();
         }
     }
 }

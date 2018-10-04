@@ -98,6 +98,17 @@ namespace DNWS.Werewolf
             [EnumMember(Value = "processing")]
             ProcessingEnum = 3,
         }
+        public enum OutcomeEnum
+        {
+            VillagerWin = 1,
+            WerewolfWin = 2,
+            FoolWin = 3,
+            HeadHunterWin = 4,
+            SerialKillerWin = 5,
+            NoWin = 6,
+        }
+        [DataMember(Name="outcome")]
+        public OutcomeEnum? Outcome {get; set;}
 
         [DataMember(Name="period")]
         public PeriodEnum? Period { get; set; }

@@ -179,21 +179,21 @@ namespace DNWS.Werewolf
                         Description = "Vote to burn a player in a day time",
                     };
                     _db.Actions.Add(dayVote);
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = seer });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = auraseer });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = priest });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = doctor });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = werewolf });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = werewolfshaman });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = alphawerewolf });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = werewolfseer });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = medium });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = bodyguard });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = jailer });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = fool });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = headhunter });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = serialkiller });
-                    _db.ActionRoles.Add(new ActionRole { Action = dayVote, Role = gunner });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = seer.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = auraseer.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = priest.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = doctor.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = werewolf.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = werewolfshaman.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = alphawerewolf.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = werewolfseer.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = medium.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = bodyguard.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = jailer.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = fool.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = headhunter.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = serialkiller.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = dayVote.Id, RoleId = gunner.Id });
 
                     Action holywater = new Action
                     {
@@ -202,7 +202,7 @@ namespace DNWS.Werewolf
                         Description = "Throw holy water to kill a werewolf",
                     };
                     _db.Actions.Add(holywater);
-                    _db.ActionRoles.Add(new ActionRole { Action = holywater, Role = priest });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = holywater.Id, RoleId = priest.Id });
 
                     Action shoot = new Action
                     {
@@ -211,7 +211,7 @@ namespace DNWS.Werewolf
                         Description = "Shoot to kill a player",
                     };
                     _db.Actions.Add(shoot);
-                    _db.ActionRoles.Add(new ActionRole { Action = shoot, Role = gunner });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = shoot.Id, RoleId = gunner.Id });
 
                     Action jail = new Action
                     {
@@ -220,7 +220,7 @@ namespace DNWS.Werewolf
                         Description = "Jail a player at night",
                     };
                     _db.Actions.Add(jail);
-                    _db.ActionRoles.Add(new ActionRole { Action = jail, Role = jailer });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = jail.Id, RoleId = jailer.Id });
 
                     Action enchant = new Action
                     {
@@ -229,7 +229,7 @@ namespace DNWS.Werewolf
                         Description = "Enchant a player at night",
                     };
                     _db.Actions.Add(enchant);
-                    _db.ActionRoles.Add(new ActionRole { Action = enchant, Role = werewolfshaman });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = enchant.Id, RoleId = werewolfshaman.Id });
 
                     Action nightVote = new Action
                     {
@@ -238,10 +238,10 @@ namespace DNWS.Werewolf
                         Description = "Werewolf vote to kill a player in a night time",
                     };
                     _db.Actions.Add(nightVote);
-                    _db.ActionRoles.Add(new ActionRole { Action = nightVote, Role = werewolf });
-                    _db.ActionRoles.Add(new ActionRole { Action = nightVote, Role = werewolfshaman });
-                    _db.ActionRoles.Add(new ActionRole { Action = nightVote, Role = alphawerewolf });
-                    _db.ActionRoles.Add(new ActionRole { Action = nightVote, Role = werewolfseer });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = nightVote.Id, RoleId = werewolf.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = nightVote.Id, RoleId = werewolfshaman.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = nightVote.Id, RoleId = alphawerewolf.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = nightVote.Id, RoleId = werewolfseer.Id });
 
                     Action guard = new Action
                     {
@@ -250,7 +250,7 @@ namespace DNWS.Werewolf
                         Description = "Protect a player",
                     };
                     _db.Actions.Add(guard);
-                    _db.ActionRoles.Add(new ActionRole { Action = guard, Role = bodyguard });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = guard.Id, RoleId = bodyguard.Id });
 
                     Action heal = new Action
                     {
@@ -259,7 +259,7 @@ namespace DNWS.Werewolf
                         Description = "Heal a player",
                     };
                     _db.Actions.Add(heal);
-                    _db.ActionRoles.Add(new ActionRole { Action = heal, Role = doctor });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = heal.Id, RoleId = doctor.Id });
 
                     Action kill = new Action
                     {
@@ -268,7 +268,7 @@ namespace DNWS.Werewolf
                         Description = "Kill a player",
                     };
                     _db.Actions.Add(kill);
-                    _db.ActionRoles.Add(new ActionRole { Action = kill, Role = serialkiller });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = kill.Id, RoleId = serialkiller.Id });
 
                     Action reveal = new Action
                     {
@@ -277,8 +277,8 @@ namespace DNWS.Werewolf
                         Description = "Reveal a player's role",
                     };
                     _db.Actions.Add(reveal);
-                    _db.ActionRoles.Add(new ActionRole { Action = reveal, Role = seer });
-                    _db.ActionRoles.Add(new ActionRole { Action = reveal, Role = werewolfseer });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = reveal.Id, RoleId = seer.Id });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = reveal.Id, RoleId = werewolfseer.Id });
 
                     Action aura = new Action
                     {
@@ -287,7 +287,7 @@ namespace DNWS.Werewolf
                         Description = "See a player's aura",
                     };
                     _db.Actions.Add(aura);
-                    _db.ActionRoles.Add(new ActionRole { Action = aura, Role = auraseer });
+                    _db.ActionRoles.Add(new ActionRole { ActionId = aura.Id, RoleId = auraseer.Id });
 
                     Action revive = new Action
                     {
@@ -296,8 +296,7 @@ namespace DNWS.Werewolf
                         Description = "Revive a dead player",
                     };
                     _db.Actions.Add(revive);
-                    _db.ActionRoles.Add(new ActionRole { Action = revive, Role = medium });
-
+                    _db.ActionRoles.Add(new ActionRole { ActionId = revive.Id, RoleId = medium.Id });
                     _db.SaveChanges();
                 }
             }

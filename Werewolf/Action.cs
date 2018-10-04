@@ -32,8 +32,9 @@ namespace DNWS.Werewolf
         /// <summary>
         /// Gets or Sets Id
         /// </summary>
+        [Key]
         [DataMember(Name="id")]
-        public int? Id { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// Gets or Sets Name

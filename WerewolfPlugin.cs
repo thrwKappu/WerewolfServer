@@ -252,13 +252,19 @@ namespace DNWS
                             response.Status = 400;
                             return response;
                         }
-                        //Flatten action list
                         foreach (DNWS.Werewolf.Game g in games)
                         {
-                            // List<Player> players = new List<Player>();
                             foreach (Player player in g.Players)
                             {
-                                player.Role = null;
+                                if (werewolf.IsPlayerDead(player.Id.ToString()))
+                                {
+                                    Player p = werewolf.GetPlayer(player.Id.ToString());
+                                    player.Role = p.Role;
+                                }
+                                else
+                                {
+                                    player.Role = null;
+                                }
                                 player.Password = "";
                                 player.Session = "";
                                 player.Game = null;
@@ -342,13 +348,17 @@ namespace DNWS
                                 }
                                 foreach (Player p in game.Players)
                                 {
-                                    if (p.Id != player.Id)
+                                    if (p.Id == player.Id)
                                     {
-                                        p.Role = null;
+                                        p.Role.ActionRoles = null;
+                                    }
+                                    else if (werewolf.IsPlayerDead(p.Id.ToString()))
+                                    {
+                                        p.Role.ActionRoles = null;
                                     }
                                     else
                                     {
-                                        p.Role.ActionRoles = null;
+                                        p.Role = null;
                                     }
                                     p.Password = "";
                                     p.Session = "";

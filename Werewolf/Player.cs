@@ -88,16 +88,40 @@ namespace DNWS.Werewolf
             OfflineEnum = 2,
             
             /// <summary>
-            /// Enum DeadEnum for dead
-            /// </summary>
-            [EnumMember(Value = "dead")]
-            DeadEnum = 3,
-            
-            /// <summary>
             /// Enum NotInGameEnum for not in game
             /// </summary>
             [EnumMember(Value = "not in game")]
-            NotInGameEnum = 4
+            NotInGameEnum = 3,
+            
+            /// <summary>
+            /// Enum VoteDeadEnum for dead
+            /// </summary>
+            [EnumMember(Value = "votedead")]
+            VoteDeadEnum = 4,
+
+            /// <summary>
+            /// Enum ShotDeadEnum for dead
+            /// </summary>
+            [EnumMember(Value = "shotdead")]
+            ShotDeadEnum = 5,
+
+            /// <summary>
+            /// Enum JailDeadEnum for dead
+            /// </summary>
+            [EnumMember(Value = "jaildead")]
+            JailDeadEnum = 6,
+
+            /// <summary>
+            /// Enum HolyDeadEnum for dead
+            /// </summary>
+            [EnumMember(Value = "holydead")]
+            HolyDeadEnum = 7,
+
+            /// <summary>
+            /// Enum KillDeadEnum for dead
+            /// </summary>
+            [EnumMember(Value = "killdead")]
+            KillDeadEnum = 8,
         }
 
         /// <summary>

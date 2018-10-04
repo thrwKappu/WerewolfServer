@@ -29,9 +29,13 @@ namespace DNWS.Werewolf
     [DataContract]
     public partial class ActionRole
     { 
+        [DataMember(Name="actionid")]
         public int ActionId {get; set;}
+        [DataMember(Name="action")]
         public Action Action {get; set;}
+        [DataMember(Name="roleid")]
         public int RoleId {get; set;}
+        [DataMember(Name="role")]
         public Role Role {get; set;}
 
     }

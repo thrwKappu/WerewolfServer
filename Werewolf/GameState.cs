@@ -64,17 +64,5 @@ namespace DNWS.Werewolf
         {
             _nightVoteList = new Dictionary<Player, Player>();
         }
-        public enum OutcomeEnum
-        {
-            VillagerWin = 1,
-            WerewolfWin = 2,
-            FoolWin = 3,
-            HeadHunterWin = 4,
-            SerialKillerWin = 5,
-            NoWin = 6,
-        }
-        [NotMapped]
-        [JsonProperty("Outcome")]
-        public OutcomeEnum? Outcome {get; set;}
     }
 }

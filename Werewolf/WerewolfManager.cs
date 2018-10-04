@@ -95,7 +95,7 @@ namespace DNWS.Werewolf
                     int countWerewolfTeam = survivers.Where(x => x.Role.Type == Role.TypeEnum.WolfEnum).Count();
                     int countVillagerTeam = survivers.Where(x => x.Role.Type == Role.TypeEnum.VillagerEnum).Count();
                     // Headhunt 
-                    if (_game.TargetByHeadHunter != null && werewolf.GetPlayer(_game.TargetByHeadHunter.Id.ToString()).Status == Player.StatusEnum.DeadEnum)
+                    if (_game.TargetByHeadHunter != null && werewolf.IsPlayerDead(_game.TargetByHeadHunter.Id.ToString()))
                     {
                         countVillagerTeam = countVillagerTeam += survivers.Where(x => x.Role.Name == WerewolfGame.ROLE_HEAD_HUNTER).Count();
                     }
@@ -163,12 +163,12 @@ namespace DNWS.Werewolf
                                 if (_game.BodyguardHit == 0)
                                 {
                                     Player bodyguard = _game.Players.Where(p => p.Role.Name == WerewolfGame.ROLE_BODYGUARD).Single();
-                                    werewolf.SetPlayerStatus(bodyguard.Id.ToString(), Player.StatusEnum.DeadEnum);
+                                    werewolf.SetPlayerStatus(bodyguard.Id.ToString(), Player.StatusEnum.VoteDeadEnum);
                                 }
                             }
                             else if (maxVote != null && maxVote != _game.HealedByDoctor)
                             {
-                                werewolf.SetPlayerStatus(maxVote.Id.ToString(), Player.StatusEnum.DeadEnum);
+                                werewolf.SetPlayerStatus(maxVote.Id.ToString(), Player.StatusEnum.VoteDeadEnum);
                             }
                             _game.ResetNightVoteList();
                             // Serial killer's victim
@@ -179,12 +179,12 @@ namespace DNWS.Werewolf
                                 if (_game.BodyguardHit == 0)
                                 {
                                     Player bodyguard = _game.Players.Where(p => p.Role.Name == WerewolfGame.ROLE_BODYGUARD).Single();
-                                    werewolf.SetPlayerStatus(bodyguard.Id.ToString(), Player.StatusEnum.DeadEnum);
+                                    werewolf.SetPlayerStatus(bodyguard.Id.ToString(), Player.StatusEnum.KillDeadEnum);
                                 }
                             }
                             else if (victim != _game.HealedByDoctor)
                             {
-                                werewolf.SetPlayerStatus(_game.KillBySerialKiller.Id.ToString(), Player.StatusEnum.DeadEnum);
+                                werewolf.SetPlayerStatus(_game.KillBySerialKiller.Id.ToString(), Player.StatusEnum.KillDeadEnum);
                             }
                             _game.KillBySerialKiller = null;
                             timeCounter = 0;
@@ -210,7 +210,7 @@ namespace DNWS.Werewolf
                             Player maxVote = voteCount.FirstOrDefault(x => x.Value == voteCount.Values.Max()).Key;
                             if (maxVote != null)
                             {
-                                werewolf.SetPlayerStatus(maxVote.Id.ToString(), Player.StatusEnum.DeadEnum);
+                                werewolf.SetPlayerStatus(maxVote.Id.ToString(), Player.StatusEnum.VoteDeadEnum);
                                 if (maxVote.Role.Name == WerewolfGame.ROLE_FOOL)
                                 {
                                     //TODO Fool win, stop game 
