@@ -18,6 +18,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace DNWS.Werewolf 
 { 
@@ -50,6 +51,7 @@ namespace DNWS.Werewolf
         /// Game status in the system
         /// </summary>
         /// <value>Game status in the system</value>
+        [JsonConverter(typeof(StringEnumConverter))]
         public enum StatusEnum
         { 
             /// <summary>
@@ -78,6 +80,7 @@ namespace DNWS.Werewolf
         [DataMember(Name="status")]
         public StatusEnum? Status { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public enum PeriodEnum
         { 
             /// <summary>
@@ -100,6 +103,8 @@ namespace DNWS.Werewolf
         }
         [DataMember(Name="period")]
         public PeriodEnum? Period { get; set; }
+
+        [JsonConverter(typeof(StringEnumConverter))]
         public enum OutcomeEnum
         {
             [EnumMember(Value = "villagerwin")]

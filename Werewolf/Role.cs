@@ -19,6 +19,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations.Schema;
+using Newtonsoft.Json.Converters;
 
 namespace DNWS.Werewolf 
 { 
@@ -58,6 +59,7 @@ namespace DNWS.Werewolf
         [JsonProperty("actions")]
         public List<Action> Actions {get; set;}
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public enum TypeEnum
         { 
             /// <summary>

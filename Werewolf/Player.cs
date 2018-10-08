@@ -18,6 +18,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace DNWS.Werewolf 
 { 
@@ -73,6 +74,7 @@ namespace DNWS.Werewolf
         /// Player status in a game
         /// </summary>
         /// <value>Player status in a game</value>
+        [JsonConverter(typeof(StringEnumConverter))]
         public enum StatusEnum
         { 
             /// <summary>

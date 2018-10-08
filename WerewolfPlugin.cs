@@ -165,6 +165,11 @@ namespace DNWS
                             try
                             {
                                 Player p = JsonConvert.DeserializeObject<Player>(httpRequest.Body);
+                                if (p == null)
+                                {
+                                    response.Status = 400;
+                                    return response;
+                                }
                                 try
                                 {
                                     Player player = werewolf.GetPlayerByName(p.Name);
@@ -350,11 +355,17 @@ namespace DNWS
                                 {
                                     if (p.Id == player.Id)
                                     {
-                                        p.Role.ActionRoles = null;
+                                        if (p.Role != null) 
+                                        {
+                                            p.Role.ActionRoles = null;
+                                        }
                                     }
                                     else if (werewolf.IsPlayerDead(p.Id.ToString()))
                                     {
-                                        p.Role.ActionRoles = null;
+                                        if (p.Role != null) 
+                                        {
+                                            p.Role.ActionRoles = null;
+                                        }
                                     }
                                     else
                                     {
