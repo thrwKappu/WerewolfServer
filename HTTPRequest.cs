@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -51,32 +52,17 @@ namespace DNWS
         {
             get { return _method; }
         }
-        public HTTPRequest(String request)
+        public HTTPRequest(HttpListenerRequest req)
         {
             _propertyListDictionary = new Dictionary<String, String>();
-            String[] lines = Regex.Split(request, "\\n");
-
-            if (lines.Length == 0)
-            {
-                _status = 500;
-                return;
-            }
-
-            String[] statusLine = Regex.Split(lines[0], "\\s");
-            if (statusLine.Length != 4)
-            { // too short something is wrong
-                _status = 401;
-                return;
-            }
-            if ((new [] {"get", "post", "put", "delete"}).Contains(statusLine[0].ToLower())) {
-                _method = statusLine[0].ToUpper();
-            } else {
+            _method = req.HttpMethod;
+            if (!(new [] {"get", "post", "put", "delete"}).Contains(_method.ToLower())) {
                 _status = 501;
                 return;
             }
             _status = 200;
-
-            _url = statusLine[1];
+            //_url = req.Url.ToString();
+            _url = req.Url.AbsolutePath;
             String[] urls = Regex.Split(_url, "/");
             _filename = urls[urls.Length - 1];
             _path = urls[1];
@@ -99,43 +85,24 @@ namespace DNWS
                 }
             }
 
-            if (lines.Length == 1) return;
-            string contentType = null;
-            StringBuilder bodyBuilder = new StringBuilder();
-            bool isHeader = true;
-            for (int i = 1; i != lines.Length; i++)
+            foreach (string key in req.Headers)
             {
-                if (isHeader)
+                addProperty(key, req.Headers.GetValues(key)[0]);
+            }
+            if (req.HasEntityBody)
+            {
+                System.IO.Stream rs = req.InputStream;
+                System.Text.Encoding encoding = req.ContentEncoding;
+                System.IO.StreamReader reader = new System.IO.StreamReader(rs, encoding);
+                string body = reader.ReadToEnd();
+                rs.Close();
+                reader.Close();
+                if (req.ContentType.ToLower() == CONTENT_TYPE_APP_X_HTTP_FORM_URLENCODED)
                 {
-                    String[] pair = Regex.Split(lines[i], ":"); //FIXME
-                    pair = pair.Where(x => !string.IsNullOrEmpty(x)).ToArray();
-                    if (pair.Length == 0) continue;
-                    if (pair.Length == 1)
+                    string[] lines = Regex.Split(body, "\r\n");
+                    foreach (string line in lines)
                     {
-                        isHeader = false;
-                        continue;
-                    }
-                    else
-                    { // Length == 2, GET url request
-                        if(pair.Length > 2) {
-                            pair[1] = String.Join(":", pair, 1, pair.Length - 1);
-                        }
-                        pair[1] = pair[1].Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
-                        addProperty(pair[0].Trim(), pair[1].Trim());
-                        //FIXME: Another quick hack, this rely on HTTP specification, so it should always work, hopefully
-                        if (pair[0].Trim().ToLower() == "content-type") {
-                            contentType = pair[1].Trim().ToLower();
-                        }
-                    }
-                }
-                else
-                {
-                    if (lines[i] == "") {
-                        continue;
-                    }
-                    if (contentType == CONTENT_TYPE_APP_X_HTTP_FORM_URLENCODED)
-                    { // handle post body, but we should skip json body
-                        String[] pair = Regex.Split(lines[i], ":"); //FIXME
+                        String[] pair = Regex.Split(line, ":"); //FIXME
                         pair = pair.Where(x => !string.IsNullOrEmpty(x)).ToArray();
                         if (pair[0].Length > 1)
                         { //FIXME, this is a quick hack
@@ -143,15 +110,11 @@ namespace DNWS
                             _requestListDictionary = _requestListDictionary.Concat(_bodys).ToDictionary(x => x.Key, x => x.Value);
                         }
                     }
-                    else if (contentType == CONTENT_TYPE_APP_JSON)
-                    {
-                        bodyBuilder.Append(lines[i]);
-                    }
-
                 }
-            }
-            if (contentType == "application/json") {
-              _body = bodyBuilder.ToString();
+                else if (req.ContentType.ToLower() == CONTENT_TYPE_APP_JSON)
+                {
+                    _body = body;
+                }
             }
         }
         public String getPropertyByKey(String key)

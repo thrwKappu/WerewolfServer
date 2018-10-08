@@ -49,6 +49,17 @@ namespace DNWS
             set { _type = value; }
         }
 
+        public Dictionary<string, string> Headers
+        {
+            get
+            {
+                Dictionary<string, string> headers = new Dictionary<string, string>();
+                headers["Content-Type"] = Type;
+                headers["Connection"] = "close";
+                headers["Server"] = "DNWS 1.0 (Werewolf)";
+                return headers;
+            }
+        }
         public String Header
         {
             get

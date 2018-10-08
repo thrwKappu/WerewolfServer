@@ -84,7 +84,7 @@ namespace DNWS
         }
         // Get config from config manager, e.g., document root and port
         protected string ROOT = Program.Configuration["DocumentRoot"];
-        protected Socket _client;
+        protected HttpListenerContext _context;
         protected Program _parent;
         protected Dictionary<string, PluginInfo> plugins;
 
@@ -93,9 +93,9 @@ namespace DNWS
         /// </summary>
         /// <param name="client">Client socket</param>
         /// <param name="parent">Parent ref</param>
-        public HTTPProcessor(Socket client, Program parent)
+        public HTTPProcessor(HttpListenerContext context, Program parent)
         {
-            _client = client;
+            _context = context;
             _parent = parent;
             plugins = new Dictionary<string, PluginInfo>();
             // load plugins
@@ -157,24 +157,12 @@ namespace DNWS
         /// </summary>
         public void Process()
         {
-            NetworkStream ns = new NetworkStream(_client);
-            string requestStr = "";
-            HTTPRequest request = null;
-            HTTPResponse response = null;
-            byte[] bytes = new byte[1024];
-            int bytesRead;
+            HttpListenerRequest req = _context.Request;
+            HttpListenerResponse res = _context.Response;
+            HTTPRequest request = new HTTPRequest(req);
+            HTTPResponse response = new HTTPResponse(200);
+            request.addProperty("RemoteEndPoint", req.RemoteEndPoint.ToString());
 
-            // Read all request
-            do
-            {
-                bytesRead = ns.Read(bytes, 0, bytes.Length);
-                requestStr += Encoding.UTF8.GetString(bytes, 0, bytesRead);
-            } while (ns.DataAvailable);
-
-            request = new HTTPRequest(requestStr);
-            request.addProperty("RemoteEndPoint", _client.RemoteEndPoint.ToString());
-
-            // We can handle only GET now
             if(request.Status != 200) {
                 response = new HTTPResponse(request.Status);
             }
@@ -212,17 +200,19 @@ namespace DNWS
                     }
                 }
             }
-            // Generate response
-            ns.Write(Encoding.UTF8.GetBytes(response.Header), 0, response.Header.Length);
-            if(response.Body != null) {
-              ns.Write(response.Body, 0, response.Body.Length);
+            res.StatusCode = response.Status;
+            foreach (string key in response.Headers.Keys)
+            {
+                res.AddHeader(key, response.Headers[key]);
             }
-
-            // Shuting down
-            //ns.Close();
-            _client.Shutdown(SocketShutdown.Both);
-            //_client.Close();
-
+            if(response.Body != null) {
+                byte[] buffer = response.Body;
+                res.ContentLength64 = buffer.Length;
+                System.IO.Stream output = res.OutputStream;
+                output.Write(buffer, 0, buffer.Length);
+                output.Close();
+            }
+            res.Close();
         }
     }
 
@@ -245,12 +235,10 @@ namespace DNWS
     /// </summary>
     public class DotNetWebServer
     {
-        protected int _port;
         protected int _maxThread;
         protected String _threadModel;
         protected Program _parent;
-        protected Socket serverSocket;
-        protected Socket clientSocket;
+        protected HttpListener listener;
         private static DotNetWebServer _instance = null;
         protected int id;
 
@@ -285,52 +273,57 @@ namespace DNWS
         /// </summary>
         public void Start()
         {
-            while (true) {
-                try
+            try
+            {
+                if (!HttpListener.IsSupported)
                 {
-                    // Create listening socket, queue size is 5 now.
-                    _port = Convert.ToInt32(Program.Configuration["Port"]);
-                    IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, _port);
-                    serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                    serverSocket.Bind(localEndPoint);
-                    serverSocket.Listen(5);
-                    _parent.Log("Server started at port " + _port + ".");
-                    _threadModel = Program.Configuration["ThreadModel"];
-                    _parent.Log("Thread model is " + _threadModel);
-                    if (_threadModel is "Pool") {
-                        _maxThread = Convert.ToInt32(Program.Configuration["ThreadPoolSize"]);
-                        // https://msdn.microsoft.com/en-us/library/system.threading.threadpool.setmaxthreads(v=vs.110).aspx#Remarks
-                        if (_maxThread < Environment.ProcessorCount)
-                        {
-                            _maxThread = Environment.ProcessorCount;
-                        }
-                        int minWorker, minIOC;
-                        ThreadPool.GetMinThreads(out minWorker, out minIOC);
-                        if (_maxThread < minWorker || _maxThread < minIOC)
-                        {
-                            _maxThread = (minWorker < minIOC) ? minIOC : minWorker;
-                        }
-                        ThreadPool.SetMaxThreads(_maxThread, _maxThread);
-                        _parent.Log("Max pool size is " +_maxThread);
-                    }
-                    break;
+                    Console.WriteLine("Http Listener is not supported");
+                    return;
                 }
-                catch (Exception ex)
+                string[] prefixes = { "http://*:8080/"};
+                listener = new HttpListener();
+                foreach (string s in prefixes)
                 {
-                    _parent.Log("Server started unsuccessfully.");
-                    _parent.Log(ex.Message);
+                    listener.Prefixes.Add(s);
                 }
-                _port = _port + 1;
+                listener.Start();
+                _parent.Log("Server started");
+                // _parent.Log("Listener: " + listener.ToString());
+                // _threadModel = Program.Configuration["ThreadModel"];
+                // _parent.Log("Thread model is " + _threadModel);
+                // if (_threadModel is "Pool")
+                // {
+                //     _maxThread = Convert.ToInt32(Program.Configuration["ThreadPoolSize"]);
+                //     // https://msdn.microsoft.com/en-us/library/system.threading.threadpool.setmaxthreads(v=vs.110).aspx#Remarks
+                //     if (_maxThread < Environment.ProcessorCount)
+                //     {
+                //         _maxThread = Environment.ProcessorCount;
+                //     }
+                //     int minWorker, minIOC;
+                //     ThreadPool.GetMinThreads(out minWorker, out minIOC);
+                //     if (_maxThread < minWorker || _maxThread < minIOC)
+                //     {
+                //         _maxThread = (minWorker < minIOC) ? minIOC : minWorker;
+                //     }
+                //     ThreadPool.SetMaxThreads(_maxThread, _maxThread);
+                //     _parent.Log("Max pool size is " + _maxThread);
+                // }
             }
-            if (_threadModel is "Single") {
-                MainLoopSingleThread();
-            } else if(_threadModel is "Multi") {
+            catch (Exception ex)
+            {
+                _parent.Log(ex.ToString());
+                return;
+            }
+
+            // if (_threadModel is "Single") {
+            //     MainLoopSingleThread();
+            // } else if(_threadModel is "Multi") {
                 MainLoopMultiThread();
-            } else if(_threadModel is "Pool") {
-                MainLoopThreadPool();
-            } else {
-                _parent.Log("Server starting error: unknown thread model\n");
-            }
+            // } else if(_threadModel is "Pool") {
+                // MainLoopThreadPool();
+            // } else {
+            //     _parent.Log("Server starting error: unknown thread model\n");
+            // }
         }
 
         private void MainLoopMultiThread()
@@ -340,10 +333,10 @@ namespace DNWS
                 try
                 {
                     // Wait for client
-                    clientSocket = serverSocket.Accept();
+                    HttpListenerContext context = listener.GetContext();
                     // Get one, show some info
-                    _parent.Log("Client accepted:" + clientSocket.RemoteEndPoint.ToString());
-                    HTTPProcessor hp = new HTTPProcessor(clientSocket, _parent);
+                    _parent.Log("Client accepted:" + context.Request.RemoteEndPoint.ToString());
+                    HTTPProcessor hp = new HTTPProcessor(context, _parent);
                     Thread thread = new Thread(new ThreadStart(hp.Process));
                     id++;
                     thread.Start();
@@ -355,45 +348,45 @@ namespace DNWS
             }
         }
 
-        private void MainLoopThreadPool()
-        {
-            while (true)
-            {
-                try
-                {
-                    // Wait for client
-                    clientSocket = serverSocket.Accept();
-                    // Get one, show some info
-                    _parent.Log("Client accepted:" + clientSocket.RemoteEndPoint.ToString());
-                    HTTPProcessor hp = new HTTPProcessor(clientSocket, _parent);
-                    TaskInfo ti = new TaskInfo(hp);
-                    ThreadPool.QueueUserWorkItem(ThreadProc, ti);
-                }
-                catch (Exception ex)
-                {
-                    _parent.Log("Server starting error: " + ex.Message + "\n" + ex.StackTrace);
-                }
-            }
-        }
+        // private void MainLoopThreadPool()
+        // {
+        //     while (true)
+        //     {
+        //         try
+        //         {
+        //             // Wait for client
+        //             clientSocket = serverSocket.Accept();
+        //             // Get one, show some info
+        //             _parent.Log("Client accepted:" + clientSocket.RemoteEndPoint.ToString());
+        //             HTTPProcessor hp = new HTTPProcessor(clientSocket, _parent);
+        //             TaskInfo ti = new TaskInfo(hp);
+        //             ThreadPool.QueueUserWorkItem(ThreadProc, ti);
+        //         }
+        //         catch (Exception ex)
+        //         {
+        //             _parent.Log("Server starting error: " + ex.Message + "\n" + ex.StackTrace);
+        //         }
+        //     }
+        // }
 
-        private void MainLoopSingleThread()
-        {
-            while (true)
-            {
-                try
-                {
-                    // Wait for client
-                    clientSocket = serverSocket.Accept();
-                    // Get one, show some info
-                    _parent.Log("Client accepted:" + clientSocket.RemoteEndPoint.ToString());
-                    HTTPProcessor hp = new HTTPProcessor(clientSocket, _parent);
-                    hp.Process();
-                }
-                catch (Exception ex)
-                {
-                    _parent.Log("Server starting error: " + ex.Message + "\n" + ex.StackTrace);
-                }
-            }
-        }
+        // private void MainLoopSingleThread()
+        // {
+        //     while (true)
+        //     {
+        //         try
+        //         {
+        //             // Wait for client
+        //             clientSocket = serverSocket.Accept();
+        //             // Get one, show some info
+        //             _parent.Log("Client accepted:" + clientSocket.RemoteEndPoint.ToString());
+        //             HTTPProcessor hp = new HTTPProcessor(clientSocket, _parent);
+        //             hp.Process();
+        //         }
+        //         catch (Exception ex)
+        //         {
+        //             _parent.Log("Server starting error: " + ex.Message + "\n" + ex.StackTrace);
+        //         }
+        //     }
+        // }
     }
 }
