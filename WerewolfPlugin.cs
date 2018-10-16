@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using System.Linq;
+using Action = DNWS.Werewolf.Action;
+using OutcomeEnum = DNWS.Werewolf.Action.OutcomeEnum;
 
 namespace DNWS
 {
@@ -175,7 +177,7 @@ namespace DNWS
                                     Player player = werewolf.GetPlayerByName(p.Name);
                                     if (player.Password != p.Password || player.Name != p.Name)
                                     {
-                                        response.SetBodyString("{\"error\":\"User not found or password is incorrect.\"}");
+                                        response.SetBodyString("{\"description\":\"User not found or password is incorrect.\"}");
                                         response.Status = 404;
                                         return response;
 
@@ -191,7 +193,7 @@ namespace DNWS
                                 }
                                 catch (Exception)
                                 {
-                                    response.SetBodyString("{\"error\":\"User not found or password is incorrect.\"}");
+                                    response.SetBodyString("{\"description\":\"User not found or password is incorrect.\"}");
                                     response.Status = 404;
                                     return response;
                                 }
@@ -460,27 +462,34 @@ namespace DNWS
                             string targetID = requests[4];
                             try
                             {
-                                string outcome = werewolf.PostAction(sessionID, actionID, targetID);
-                                if (outcome == WerewolfGame.OUTCOME_REVEALED)
+                                Action act = new Action();
+                                Action.OutcomeEnum outcome = werewolf.PostAction(sessionID, actionID, targetID);
+                                if (outcome == OutcomeEnum.RevealedEnum)
                                 {
                                     Player target = werewolf.GetPlayer(targetID);
-                                    response.SetBodyString("{\"outcome\":\"revealed\",\"role\":\"{" + target.Role.Name + "}\"}");
+                                    act.Outcome = OutcomeEnum.RevealedEnum;
+                                    act.Target = target.Role.Name;
+                                    //response.SetBodyString("{\"outcome\":\"revealed\",\"role\":\"{" + target.Role.Name + "}\"}");
                                 }
-                                else if (outcome == WerewolfGame.OUTCOME_ENCHANTED)
+                                else if (outcome ==  OutcomeEnum.EnchantedEnum)
                                 {
-                                    response.SetBodyString("{\"outcome\":\"revealed\",\"role\":\"{" + WerewolfGame.ROLE_ALPHA_WEREWOLF + "}\"}");
+                                    act.Outcome = OutcomeEnum.RevealedEnum;
+                                    act.Target = WerewolfGame.ROLE_ALPHA_WEREWOLF;
+                                    //response.SetBodyString("{\"outcome\":\"revealed\",\"role\":\"{" + WerewolfGame.ROLE_ALPHA_WEREWOLF + "}\"}");
                                 }
                                 else
                                 {
+                                    act.Outcome = outcome;
                                     response.SetBodyString("{\"outcome\":\"" + outcome + "\"}");
                                 }
+                                response.SetBodyJson(act);
                                 response.Status = 201;
                                 return response;
                             }
                             catch (Exception ex)
                             {
                                 Console.WriteLine(ex.ToString());
-                                response.SetBodyString("{\"error\":\"" + ex.ToString() + "\"}");
+                                response.SetBodyString("{\"description\":\"" + ex.ToString() + "\"}");
                                 response.Status = 400;
                                 return response;
                             }

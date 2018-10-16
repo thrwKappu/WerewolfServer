@@ -8,6 +8,7 @@ using System.Linq;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
+using OutcomeEnum = DNWS.Werewolf.Action.OutcomeEnum;
 
 namespace DNWS.Werewolf
 {
@@ -35,19 +36,21 @@ namespace DNWS.Werewolf
     }
     public partial class WerewolfGame : IObservable<WerewolfEvent>, IDisposable
     {
-        public const string OUTCOME_TARGET_DEAD = "Target Dead";
-        public const string OUTCOME_PLAYER_DEAD = "Player Dead";
-        public const string OUTCOME_OTHER_DEAD = "Other Player Dead";
-        public const string OUTCOME_NOTHING = "Nothing Happended";
-        public const string OUTCOME_PERFORMED = "Action Performed";
+        /* 
+        public const string OUTCOME_TARGET_DEAD = "TargetDead";
+        public const string OUTCOME_PLAYER_DEAD = "PlayerDead";
+        public const string OUTCOME_OTHER_DEAD = "OtherPlayerDead";
+        public const string OUTCOME_NOTHING = "NothingHappended";
+        public const string OUTCOME_PERFORMED = "ActionPerformed";
         public const string OUTCOME_ENCHANTED = "Enchanted";
         public const string OUTCOME_JAILED = "Jailed";
         public const string OUTCOME_REVEALED = "Revealed";
         public const string OUTCOME_AURA_UNKOWN = "Unknown";
         public const string OUTCOME_AURA_WEREWOLF = "Werewolf";
         public const string OUTCOME_AURA_VILLAGER = "Villager";
-        public const string OUTCOME_NOT_VALID = "Not Valid Action";
-        public const string OUTCOME_TARGET_NOT_ALIVED = "Target Is Not Alived";
+        public const string OUTCOME_NOT_VALID = "NotValidAction";
+        public const string OUTCOME_TARGET_NOT_ALIVED = "TargetIsNotAlived";
+        */
         internal class Unsubscriber<BaggageInfo> : IDisposable
         {
             private List<IObserver<BaggageInfo>> _observers;
@@ -72,6 +75,7 @@ namespace DNWS.Werewolf
         public static int GAME_COUNTDOWN_PERIOD = 5;
         public static int GAME_DAY_PERIOD = 10;
         public static int GAME_NIGHT_PERIOD = 10;
+        public static int GAME_MAX_DAY = 10;
         private static WerewolfContext _db;
 
         private static List<IObserver<WerewolfEvent>> observers = null;
@@ -142,30 +146,42 @@ namespace DNWS.Werewolf
         public void SetGameDay(string id, int day)
         {
             long lid = Int64.Parse(id);
-            Game g = _db.Games.Where(game => game.Id == lid).ToList()[0];
-            g.Day = day;
-            _db.SaveChanges();
+            using( WerewolfContext _db = new WerewolfContext())
+            {
+                Game g = _db.Games.Where(game => game.Id == lid).ToList()[0];
+                g.Day = day;
+                _db.SaveChanges();
+            }
         }
         public void SetGamePeriod(string id, Game.PeriodEnum p)
         {
             long lid = Int64.Parse(id);
-            Game g = _db.Games.Where(game => game.Id == lid).ToList()[0];
-            g.Period = p;
-            _db.SaveChanges();
+            using( WerewolfContext _db = new WerewolfContext())
+            {
+                Game g = _db.Games.Where(game => game.Id == lid).ToList()[0];
+                g.Period = p;
+                _db.SaveChanges();
+            }
         }
         public void SetGameOutcome(string id, Game.OutcomeEnum o)
         {
             long lid = Int64.Parse(id);
-            Game g = _db.Games.Where(game => game.Id == lid).ToList()[0];
-            g.Outcome = o;
-            _db.SaveChanges();
+            using( WerewolfContext _db = new WerewolfContext())
+            {
+                Game g = _db.Games.Where(game => game.Id == lid).ToList()[0];
+                g.Outcome = o;
+                _db.SaveChanges();
+            }
         }
         public void SetGameStatus(string id, Game.StatusEnum s)
         {
             long lid = Int64.Parse(id);
-            Game g = _db.Games.Where(game => game.Id == lid).ToList()[0];
-            g.Status = s;
-            _db.SaveChanges();
+            using( WerewolfContext _db = new WerewolfContext())
+            {
+                Game g = _db.Games.Where(game => game.Id == lid).ToList()[0];
+                g.Status = s;
+                _db.SaveChanges();
+            }
         }
         public void StartGame(string id)
         {
@@ -181,6 +197,7 @@ namespace DNWS.Werewolf
             {
                 throw new Exception();
             }
+            _db.Games.Update(game);
             _db.SaveChanges();
             NotifyObserver(WerewolfEvent.GAME_STARTED, game.Id);
         }
@@ -416,7 +433,7 @@ namespace DNWS.Werewolf
         {
             return DeepClone<Role>(_db.Roles.Where(role => role.Name == name).ToList()[0]);
         }
-        public string PostAction(string sessionID, string actionID, string targetID)
+        public OutcomeEnum PostAction(string sessionID, string actionID, string targetID)
         {
             Game game;
             Player player;
@@ -485,19 +502,24 @@ namespace DNWS.Werewolf
             {
                 if (target.Status != Player.StatusEnum.AliveEnum)
                 {
-                    return OUTCOME_TARGET_NOT_ALIVED;
+                    return OutcomeEnum.TargetIsNotAlivedEnum;
                 }
                 if (action.Name == WerewolfGame.ACTION_DAY_VOTE)
                 {
-                    if (game.DayVoteList.ContainsKey(player) && game.DayVoteList[player] == target)
+                    if (game.DayVoteList.ContainsKey(player.Id) && game.DayVoteList[player.Id] == target.Id)
                     {
-                        game.DayVoteList.Remove(player);
+                        game.DayVoteList.Remove(player.Id);
                     }
                     else
                     {
-                        game.DayVoteList[player] = target;
+                        game.DayVoteList[player.Id] = target.Id;
                     }
-                    return OUTCOME_PERFORMED;
+                    using (WerewolfContext _db = new WerewolfContext())
+                    {
+                        _db.Games.Update(game);
+                        _db.SaveChanges();
+                    }
+                    return OutcomeEnum.ActionPerformedEnum;
                 }
                 else if (action.Name == WerewolfGame.ACTION_ENCHANT)
                 {
@@ -509,7 +531,7 @@ namespace DNWS.Werewolf
                     {
                         game.Enchanted = target;
                     }
-                    return OUTCOME_PERFORMED;
+                    return OutcomeEnum.ActionPerformedEnum;
                 }
                 else if (action.Name == WerewolfGame.ACTION_JAIL)
                 {
@@ -521,12 +543,12 @@ namespace DNWS.Werewolf
                     {
                         game.Jailed = target;
                     }
-                    return OUTCOME_PERFORMED;
+                    return OutcomeEnum.ActionPerformedEnum;
                 }
                 else if (action.Name == WerewolfGame.ACTION_SHOOT)
                 {
                     SetPlayerStatus(target.Id.ToString(), Player.StatusEnum.ShotDeadEnum);
-                    return OUTCOME_TARGET_DEAD;
+                    return OutcomeEnum.TargetDeadEnum;
                 }
                 else if (action.Name == WerewolfGame.ACTION_HOLYWATER)
                 {
@@ -536,12 +558,12 @@ namespace DNWS.Werewolf
                                 WerewolfGame.ROLE_WEREWOLF_SHAMAN}).Contains(target.Role.Name))
                     {
                         SetPlayerStatus(target.Id.ToString(), Player.StatusEnum.HolyDeadEnum);
-                        return OUTCOME_TARGET_DEAD;
+                        return OutcomeEnum.TargetDeadEnum;
                     }
                     else
                     {
                         SetPlayerStatus(player.Id.ToString(), Player.StatusEnum.HolyDeadEnum);
-                        return OUTCOME_PLAYER_DEAD;
+                        return OutcomeEnum.PlayerDeadEnum;
                     }
                 }
             }
@@ -549,7 +571,7 @@ namespace DNWS.Werewolf
             {
                 if (game.Jailed != null && player.Id == game.Jailed.Id)
                 {
-                    return OUTCOME_PERFORMED;
+                    return OutcomeEnum.ActionPerformedEnum;
                 }
                 if (action.Name == WerewolfGame.ACTION_REVIVE)
                 {
@@ -565,7 +587,7 @@ namespace DNWS.Werewolf
                     {
                         game.ReviveByMedium = target;
                     }
-                    return OUTCOME_PERFORMED;
+                    return OutcomeEnum.ActionPerformedEnum;
                 }
                 if (target.Status != Player.StatusEnum.AliveEnum)
                 {
@@ -573,15 +595,20 @@ namespace DNWS.Werewolf
                 }
                 if (action.Name == WerewolfGame.ACTION_NIGHT_VOTE)
                 {
-                    if (game.NightVoteList.ContainsKey(player) && game.NightVoteList[player] == target)
+                    if (game.NightVoteList.ContainsKey(player.Id) && game.NightVoteList[player.Id] == target.Id)
                     {
-                        game.NightVoteList.Remove(player);
+                        game.NightVoteList.Remove(player.Id);
                     }
                     else
                     {
-                        game.NightVoteList[player] = target;
+                        game.NightVoteList[player.Id] = target.Id;
                     }
-                    return OUTCOME_PERFORMED;
+                    using (WerewolfContext _db = new WerewolfContext())
+                    {
+                        _db.Games.Update(game);
+                        _db.SaveChanges();
+                    }
+                    return OutcomeEnum.ActionPerformedEnum;
                 }
                 else if (action.Name == WerewolfGame.ACTION_GUARD)
                 {
@@ -593,7 +620,7 @@ namespace DNWS.Werewolf
                     {
                         game.ProtectedByBodyguard = target;
                     }
-                    return OUTCOME_PERFORMED;
+                    return OutcomeEnum.ActionPerformedEnum;
                 }
                 else if (action.Name == WerewolfGame.ACTION_HEAL)
                 {
@@ -605,7 +632,7 @@ namespace DNWS.Werewolf
                     {
                         game.HealedByDoctor = target;
                     }
-                    return OUTCOME_PERFORMED;
+                    return OutcomeEnum.ActionPerformedEnum;
                 }
                 else if (action.Name == WerewolfGame.ACTION_KILL)
                 {
@@ -617,15 +644,15 @@ namespace DNWS.Werewolf
                     {
                         game.KillBySerialKiller = target;
                     }
-                    return OUTCOME_PERFORMED;
+                    return OutcomeEnum.ActionPerformedEnum;
                 }
                 else if (action.Name == WerewolfGame.ACTION_REVEAL)
                 {
                     if (target == game.Enchanted)
                     {
-                        return OUTCOME_ENCHANTED;
+                        return OutcomeEnum.EnchantedEnum;
                     }
-                    return OUTCOME_REVEALED;
+                    return OutcomeEnum.RevealedEnum;
                 }
                 else if (action.Name == WerewolfGame.ACTION_AURA)
                 {
@@ -638,7 +665,7 @@ namespace DNWS.Werewolf
                         WerewolfGame.ROLE_SERIAL_KILLER
                     }.Contains(target.Name))
                     {
-                        return OUTCOME_AURA_UNKOWN;
+                        return OutcomeEnum.UnknownEnum;
                     }
                     else if (new[] {
                         WerewolfGame.ROLE_WEREWOLF,
@@ -646,12 +673,13 @@ namespace DNWS.Werewolf
                         WerewolfGame.ROLE_WEREWOLF_SHAMAN
                     }.Contains(target.Name))
                     {
-                        return OUTCOME_AURA_WEREWOLF;
+                        return OutcomeEnum.WerewolfEnum;
                     }
-                    return OUTCOME_AURA_VILLAGER;
+                    return OutcomeEnum.VillagerEnum;
+
                 }
             }
-            return OUTCOME_NOT_VALID;
+            return OutcomeEnum.NotValidActionEnum;
         }
         public IDisposable Subscribe(IObserver<WerewolfEvent> observer)
         {

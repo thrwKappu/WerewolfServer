@@ -164,8 +164,8 @@ namespace DNWS.Werewolf
                         }
                         _game.ReviveByMedium = null;
                         // check who will be killed by wolf.
-                        Dictionary<Player, int> voteCount = new Dictionary<Player, int>();
-                        foreach (KeyValuePair<Player, Player> entry in _game.NightVoteList)
+                        Dictionary<long?, int> voteCount = new Dictionary<long?, int>();
+                        foreach (KeyValuePair<long?, long?> entry in _game.NightVoteList)
                         {
                             if (voteCount.ContainsKey(entry.Value))
                             {
@@ -176,8 +176,8 @@ namespace DNWS.Werewolf
                                 voteCount[entry.Value] = 1;
                             }
                         }
-                        Player maxVote = voteCount.FirstOrDefault(x => x.Value == voteCount.Values.Max()).Key;
-                        if (maxVote != null && maxVote.Id == _game.ProtectedByBodyguard.Id)
+                        long? maxVote = voteCount.FirstOrDefault(x => x.Value == voteCount.Values.Max()).Key;
+                        if (maxVote != null && _game.ProtectedByBodyguard != null && maxVote == _game.ProtectedByBodyguard.Id)
                         {
                             _game.BodyguardHit--;
                             if (_game.BodyguardHit == 0)
@@ -186,9 +186,9 @@ namespace DNWS.Werewolf
                                 werewolf.SetPlayerStatus(bodyguard.Id.ToString(), Player.StatusEnum.VoteDeadEnum);
                             }
                         }
-                        else if (maxVote != null && maxVote != _game.HealedByDoctor)
+                        else if (maxVote != null && maxVote != _game.HealedByDoctor.Id)
                         {
-                            werewolf.SetPlayerStatus(maxVote.Id.ToString(), Player.StatusEnum.VoteDeadEnum);
+                            werewolf.SetPlayerStatus(maxVote.ToString(), Player.StatusEnum.VoteDeadEnum);
                         }
                         _game.ResetNightVoteList();
                         // Serial killer's victim
@@ -215,8 +215,8 @@ namespace DNWS.Werewolf
                     {
                         werewolf.SetGamePeriod(gameId, Game.PeriodEnum.ProcessingEnum);
                         // End of the day, check who will be killed by villager.
-                        Dictionary<Player, int> voteCount = new Dictionary<Player, int>();
-                        foreach (KeyValuePair<Player, Player> entry in _game.DayVoteList)
+                        Dictionary<long?, int> voteCount = new Dictionary<long?, int>();
+                        foreach (KeyValuePair<long?, long?> entry in _game.DayVoteList)
                         {
                             if (voteCount.ContainsKey(entry.Value))
                             {
@@ -227,27 +227,23 @@ namespace DNWS.Werewolf
                                 voteCount[entry.Value] = 1;
                             }
                         }
-                        Player maxVote = voteCount.FirstOrDefault(x => x.Value == voteCount.Values.Max()).Key;
+                        long? maxVote = voteCount.FirstOrDefault(x => x.Value == voteCount.Values.Max()).Key;
                         if (maxVote != null)
                         {
-                            werewolf.SetPlayerStatus(maxVote.Id.ToString(), Player.StatusEnum.VoteDeadEnum);
-                            if (maxVote.Role.Name == WerewolfGame.ROLE_FOOL)
+                            werewolf.SetPlayerStatus(maxVote.ToString(), Player.StatusEnum.VoteDeadEnum);
+                            Player maxVotePlayer = _game.Players.Where(p => p.Id == maxVote).Single();
+                            if (maxVotePlayer.Role.Name == WerewolfGame.ROLE_FOOL)
                             {
-                                //TODO Fool win, stop game 
                                 _game.Outcome = Game.OutcomeEnum.FoolWin;
                             }
-                            if (_game.TargetByHeadHunter.Id == maxVote.Id)
+                            if (_game.TargetByHeadHunter != null && _game.TargetByHeadHunter.Id == maxVote)
                             {
                                 _game.Outcome = Game.OutcomeEnum.HeadHunterWin;
                             }
                         }
                         _game.ResetDayVoteList();
-
-                        if (CheckWinner() == Game.OutcomeEnum.WerewolfWin)
-                        {
-                            //TODO Werewolf win, 
-                        }
                         timeCounter = 0;
+                        werewolf.SetGameOutcome(gameId, CheckWinner());
                         werewolf.SetGameDay(gameId, (int)_game.Day + 1);
                         werewolf.SetGamePeriod(gameId, Game.PeriodEnum.NightEnum);
                     }
@@ -259,6 +255,15 @@ namespace DNWS.Werewolf
                     {
                         Console.WriteLine("Game[{0}]: Day time of day {1} @ {2}", _game.Id, _game.Day, timeCounter);
                     }
+                }
+                if (_game.Day > WerewolfGame.GAME_MAX_DAY)
+                {
+                    Timer t = (Timer)stateInfo;
+                    Console.WriteLine("We've played for {0} days without winner, so ending game {0}.", WerewolfGame.GAME_MAX_DAY, _game.Id);
+                    werewolf.SetGameOutcome(gameId, Game.OutcomeEnum.NoWin);
+                    werewolf.SetGameStatus(gameId, Game.StatusEnum.EndedEnum);
+                    t.Dispose();
+                    return;
                 }
             }
         }
