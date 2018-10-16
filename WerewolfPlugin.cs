@@ -33,7 +33,7 @@ namespace DNWS
         protected HTTPResponse WerewolfProcess(HTTPRequest httpRequest,string[] requests, string method)
         {
             HTTPResponse response = new HTTPResponse(200);
-            WerewolfGame werewolf = new WerewolfGame(new WerewolfContext());
+            WerewolfGame werewolf = new WerewolfGame();
             string path = requests[0].ToUpper();
             string action = method.ToUpper();
             int request_length = requests.Length;
@@ -181,6 +181,8 @@ namespace DNWS
 
                                     }
                                     player.Session = Guid.NewGuid().ToString();
+                                    player.Game = null;
+                                    player.GameId = null;
                                     werewolf.UpdatePlayer(player);
                                     player.Password = "";
                                     response.SetBodyJson(player);
@@ -727,6 +729,7 @@ namespace DNWS
                                 foreach (ActionRole ar in act.ActionRoles)
                                 {
                                     ar.Action.ActionRoles = null;
+                                    ar.Role.ActionRoles = null;
                                     roles.Add(ar.Role);
                                 }
                                 act.Roles = roles.OrderBy(r => r.Id).ToList();

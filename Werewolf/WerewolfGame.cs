@@ -33,7 +33,7 @@ namespace DNWS.Werewolf
             _gameid = g;
         }
     }
-    public partial class WerewolfGame : IObservable<WerewolfEvent>
+    public partial class WerewolfGame : IObservable<WerewolfEvent>, IDisposable
     {
         public const string OUTCOME_TARGET_DEAD = "Target Dead";
         public const string OUTCOME_PLAYER_DEAD = "Player Dead";
@@ -87,10 +87,10 @@ namespace DNWS.Werewolf
                 _currentGameId = value;
             }
         }
-        public WerewolfGame(WerewolfContext db)
+        public WerewolfGame()
         {
             // DI
-            _db = db;
+            _db = new WerewolfContext();
             try
             {
                 if (!_roleInitialized)
@@ -134,7 +134,10 @@ namespace DNWS.Werewolf
         public Game GetGame(string id)
         {
             long lid = Int64.Parse(id);
-            return DeepClone<Game>(_db.Games.Include(game => game.Players).ThenInclude(player => player.Role).Where(game => game.Id == lid).ToList()[0]);
+            using( WerewolfContext _db = new WerewolfContext())
+            {
+                return DeepClone<Game>(_db.Games.Include(game => game.Players).ThenInclude(player => player.Role).Where(game => game.Id == lid).ToList()[0]);
+            }
         }
         public void SetGameDay(string id, int day)
         {
@@ -327,6 +330,15 @@ namespace DNWS.Werewolf
             {
                 p.Password = player.Password;
                 p.Session = player.Session;
+                p.GameId = player.GameId;
+                if (p.GameId == null)
+                {
+                    p.Game = null;
+                }
+                else
+                {
+                    p.Game = _db.Games.Where(g => g.Id == player.GameId).ToList()[0];
+                }
                 if (player.Role != null)
                 {
                     p.Role = _db.Roles.Where(r => r.Id == player.Role.Id).ToList()[0];
@@ -378,7 +390,17 @@ namespace DNWS.Werewolf
         {
             long lid = Int64.Parse(id);
             //return DeepClone<List<Action>>(_db.Actions.Where(action => action.Roles.Any(role => role.RoleId == lid)).ToList());
-            return DeepClone<List<Action>>(_db.Roles.Where(r => r.Id == lid).ToList()[0].Actions.ToList());
+            Role role = _db.Roles.Where(r => r.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(a => a.Action).ToList()[0];
+            List<Action> actions = new List<Action>();
+            foreach (ActionRole ar in role.ActionRoles)
+            {
+                // ar.Action.ActionRoles = null;
+                // ar.Action.Roles = null;
+                actions.Add(ar.Action);
+            }
+            return actions;
+            //return DeepClone<List<Action>>(role.Actions.ToList());
+            //return DeepClone<List<Action>>(_db.Roles.Where(r => r.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(a => a.Action).ToList()[0].Actions.ToList());
         }
         public List<Role> GetRoles()
         {
@@ -646,6 +668,12 @@ namespace DNWS.Werewolf
             {
                 observer.OnNext(we);
             }
+        }
+
+        public void Dispose()
+        {
+            _db.SaveChanges();
+            _db = null;
         }
     }
 }

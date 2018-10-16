@@ -273,6 +273,7 @@ namespace DNWS
         /// </summary>
         public void Start()
         {
+            // Start the listener
             try
             {
                 if (!HttpListener.IsSupported)
@@ -280,7 +281,7 @@ namespace DNWS
                     Console.WriteLine("Http Listener is not supported");
                     return;
                 }
-                string[] prefixes = { "http://*:8080/"};
+                string[] prefixes = { "http://*:2343/" };
                 listener = new HttpListener();
                 foreach (string s in prefixes)
                 {
@@ -288,46 +289,14 @@ namespace DNWS
                 }
                 listener.Start();
                 _parent.Log("Server started");
-                // _parent.Log("Listener: " + listener.ToString());
-                // _threadModel = Program.Configuration["ThreadModel"];
-                // _parent.Log("Thread model is " + _threadModel);
-                // if (_threadModel is "Pool")
-                // {
-                //     _maxThread = Convert.ToInt32(Program.Configuration["ThreadPoolSize"]);
-                //     // https://msdn.microsoft.com/en-us/library/system.threading.threadpool.setmaxthreads(v=vs.110).aspx#Remarks
-                //     if (_maxThread < Environment.ProcessorCount)
-                //     {
-                //         _maxThread = Environment.ProcessorCount;
-                //     }
-                //     int minWorker, minIOC;
-                //     ThreadPool.GetMinThreads(out minWorker, out minIOC);
-                //     if (_maxThread < minWorker || _maxThread < minIOC)
-                //     {
-                //         _maxThread = (minWorker < minIOC) ? minIOC : minWorker;
-                //     }
-                //     ThreadPool.SetMaxThreads(_maxThread, _maxThread);
-                //     _parent.Log("Max pool size is " + _maxThread);
-                // }
+
             }
             catch (Exception ex)
             {
                 _parent.Log(ex.ToString());
                 return;
             }
-
-            // if (_threadModel is "Single") {
-            //     MainLoopSingleThread();
-            // } else if(_threadModel is "Multi") {
-                MainLoopMultiThread();
-            // } else if(_threadModel is "Pool") {
-                // MainLoopThreadPool();
-            // } else {
-            //     _parent.Log("Server starting error: unknown thread model\n");
-            // }
-        }
-
-        private void MainLoopMultiThread()
-        {
+            // Run the processing loop
             while (true)
             {
                 try
@@ -347,46 +316,5 @@ namespace DNWS
                 }
             }
         }
-
-        // private void MainLoopThreadPool()
-        // {
-        //     while (true)
-        //     {
-        //         try
-        //         {
-        //             // Wait for client
-        //             clientSocket = serverSocket.Accept();
-        //             // Get one, show some info
-        //             _parent.Log("Client accepted:" + clientSocket.RemoteEndPoint.ToString());
-        //             HTTPProcessor hp = new HTTPProcessor(clientSocket, _parent);
-        //             TaskInfo ti = new TaskInfo(hp);
-        //             ThreadPool.QueueUserWorkItem(ThreadProc, ti);
-        //         }
-        //         catch (Exception ex)
-        //         {
-        //             _parent.Log("Server starting error: " + ex.Message + "\n" + ex.StackTrace);
-        //         }
-        //     }
-        // }
-
-        // private void MainLoopSingleThread()
-        // {
-        //     while (true)
-        //     {
-        //         try
-        //         {
-        //             // Wait for client
-        //             clientSocket = serverSocket.Accept();
-        //             // Get one, show some info
-        //             _parent.Log("Client accepted:" + clientSocket.RemoteEndPoint.ToString());
-        //             HTTPProcessor hp = new HTTPProcessor(clientSocket, _parent);
-        //             hp.Process();
-        //         }
-        //         catch (Exception ex)
-        //         {
-        //             _parent.Log("Server starting error: " + ex.Message + "\n" + ex.StackTrace);
-        //         }
-        //     }
-        // }
     }
 }

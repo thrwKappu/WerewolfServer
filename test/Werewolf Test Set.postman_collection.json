@@ -15,12 +15,12 @@
 							"listen": "test",
 							"script": {
 								"id": "13e105c4-05ab-407f-9aa2-f119caafba32",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(400);",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -29,12 +29,12 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/",
+							"raw": "http://localhost:{{port}}/werewolf/",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								""
@@ -49,8 +49,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "184f8fd0-709f-461a-b2c9-bccdd4f0995e",
-								"type": "text/javascript",
+								"id": "e20c3428-6712-4a2d-9ad5-e9ee7d913f1b",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -64,8 +63,8 @@
 									"",
 									"pm.test(\"Ceck action 0 role 4\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData[0].Roles[0].id).to.eql(1);",
-									"    pm.expect(jsonData[0].Roles[0].name).to.eql(\"Seer\");",
+									"    pm.expect(jsonData[0].roles[0].id).to.eql(1);",
+									"    pm.expect(jsonData[0].roles[0].name).to.eql(\"Seer\");",
 									"});",
 									"",
 									"pm.test(\"Check action 7\", function () {",
@@ -76,10 +75,11 @@
 									"",
 									"pm.test(\"Ceck action 7 role 0\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData[6].Roles[0].id).to.eql(10);",
-									"    pm.expect(jsonData[6].Roles[0].name).to.eql(\"Bodyguard\");",
+									"    pm.expect(jsonData[6].roles[0].id).to.eql(10);",
+									"    pm.expect(jsonData[6].roles[0].name).to.eql(\"Bodyguard\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -88,12 +88,12 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/action/",
+							"raw": "http://localhost:{{port}}/werewolf/action/",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"action",
@@ -110,7 +110,6 @@
 							"listen": "test",
 							"script": {
 								"id": "ffb082b7-7b5c-414d-907b-55b3cd9affb5",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -121,7 +120,8 @@
 									"    pm.expect(jsonData.id).to.eql(1);",
 									"    pm.expect(jsonData.name).to.eql(\"Day Vote\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -130,12 +130,12 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/action/1",
+							"raw": "http://localhost:{{port}}/werewolf/action/1",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"action",
@@ -156,8 +156,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6896710c-9204-48a9-b847-461712a6dead",
-								"type": "text/javascript",
+								"id": "2befe24c-e365-455e-b542-4ea268fb6475",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -171,8 +170,8 @@
 									"",
 									"pm.test(\"Your test name\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData[0].Actions[0].id).to.eql(1);",
-									"    pm.expect(jsonData[0].Actions[0].name).to.eql(\"Day Vote\");",
+									"    pm.expect(jsonData[0].actions[0].id).to.eql(1);",
+									"    pm.expect(jsonData[0].actions[0].name).to.eql(\"Day Vote\");",
 									"});",
 									"",
 									"pm.test(\"Your test name\", function () {",
@@ -183,10 +182,11 @@
 									"",
 									"pm.test(\"Your test name\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData[13].Actions[0].id).to.eql(1);",
-									"    pm.expect(jsonData[13].Actions[0].name).to.eql(\"Day Vote\");",
+									"    pm.expect(jsonData[13].actions[0].id).to.eql(1);",
+									"    pm.expect(jsonData[13].actions[0].name).to.eql(\"Day Vote\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -195,12 +195,12 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/role/",
+							"raw": "http://localhost:{{port}}/werewolf/role/",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"role",
@@ -216,8 +216,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ab672755-3b29-40b1-b46b-886fe2b94c19",
-								"type": "text/javascript",
+								"id": "a6feaf15-b770-4c90-b5a1-b3b4e800a49e",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -232,11 +231,12 @@
 									"",
 									"pm.test(\"Your test name\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.Actions[0].id).to.eql(1);",
-									"    pm.expect(jsonData.Actions[0].name).to.eql(\"Day Vote\");",
+									"    pm.expect(jsonData.actions[0].id).to.eql(1);",
+									"    pm.expect(jsonData.actions[0].name).to.eql(\"Day Vote\");",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -245,12 +245,12 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/role/1",
+							"raw": "http://localhost:{{port}}/werewolf/role/1",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"role",
@@ -266,8 +266,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4dcef380-0110-4c92-8e45-ce9fb61242b7",
-								"type": "text/javascript",
+								"id": "902d4fdf-c313-4c1a-bdb3-061f4baa8ace",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -281,10 +280,11 @@
 									"",
 									"pm.test(\"Check Action\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.Actions[0].id).to.eql(1);",
-									"    pm.expect(jsonData.Actions[0].name).to.eql(\"Day Vote\");",
+									"    pm.expect(jsonData.actions[0].id).to.eql(1);",
+									"    pm.expect(jsonData.actions[0].name).to.eql(\"Day Vote\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -293,12 +293,12 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/role/14",
+							"raw": "http://localhost:{{port}}/werewolf/role/14",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"role",
@@ -320,7 +320,6 @@
 							"listen": "test",
 							"script": {
 								"id": "eef3a8ee-8907-4fe2-a8af-200be3078767",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -330,7 +329,8 @@
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.length).to.eql(0);",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -344,12 +344,12 @@
 						],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/player/",
+							"raw": "http://localhost:{{port}}/werewolf/player/",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"player",
@@ -366,7 +366,6 @@
 							"listen": "test",
 							"script": {
 								"id": "f2eda8d8-1a9e-4db6-9904-2e3c69366af0",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -374,7 +373,8 @@
 									"    pm.environment.set(\"pruet_id\", jsonData.id );",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -391,12 +391,12 @@
 							"raw": "{\n\t\"name\":\"pruet\",\n\t\"password\":\"Qwertyu8\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/player/",
+							"raw": "http://localhost:{{port}}/werewolf/player/",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"player",
@@ -413,7 +413,6 @@
 							"listen": "test",
 							"script": {
 								"id": "a9ba7f34-975f-4d9f-ba9f-8ffbc6776926",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -426,7 +425,8 @@
 									"    pm.expect(jsonData[0].id).to.eql(pm.environment.get(\"pruet_id\"));",
 									"    pm.expect(jsonData[0].name).to.eql(\"pruet\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -440,12 +440,12 @@
 						],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/player/",
+							"raw": "http://localhost:{{port}}/werewolf/player/",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"player",
@@ -462,13 +462,13 @@
 							"listen": "test",
 							"script": {
 								"id": "ebfae82e-fd79-4465-9912-ba82425ec3e4",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -485,12 +485,12 @@
 							"raw": "{\n\t\"name\":\"pruet\",\n\t\"id\": \"{{pruet_id}}\",\n\t\"password\":\"abcdef\",\n\t\"status\":4\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/player/",
+							"raw": "http://localhost:{{port}}/werewolf/player/",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"player",
@@ -507,7 +507,6 @@
 							"listen": "test",
 							"script": {
 								"id": "8807dcf8-0480-4ba1-a88c-5766bf7d9aa3",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -515,7 +514,8 @@
 									"    pm.environment.set(\"pruet_session\", jsonData.session );",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -532,12 +532,12 @@
 							"raw": "{\n\t\"name\":\"pruet\",\n\t\"password\":\"abcdef\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/player/login/",
+							"raw": "http://localhost:{{port}}/werewolf/player/login/",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"player",
@@ -555,7 +555,6 @@
 							"listen": "test",
 							"script": {
 								"id": "ecee4b75-934a-4857-a30e-a1b235636861",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(201);",
@@ -568,7 +567,8 @@
 									"    pm.expect(jsonData.players[0].id).to.eql(pm.environment.get(\"pruet_id\"));",
 									"    pm.expect(jsonData.players[0].name).to.eql(\"pruet\");",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -577,12 +577,12 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/game/session/{{pruet_session}}",
+							"raw": "http://localhost:{{port}}/werewolf/game/session/{{pruet_session}}",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"game",
@@ -600,7 +600,6 @@
 							"listen": "test",
 							"script": {
 								"id": "84f51d40-bf01-42eb-8110-dd982a0c6a08",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -612,7 +611,8 @@
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.players.length).to.eql(0);",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -621,12 +621,12 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/game/session/{{pruet_session}}",
+							"raw": "http://localhost:{{port}}/werewolf/game/session/{{pruet_session}}",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"game",
@@ -644,12 +644,12 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/player/logout/{{pruet_session}}",
+							"raw": "http://localhost:{{port}}/werewolf/player/logout/{{pruet_session}}",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"player",
@@ -667,12 +667,12 @@
 							"listen": "test",
 							"script": {
 								"id": "dcdfbecb-15b3-45ec-80b1-6f513cf0152d",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -681,12 +681,12 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/player/{{pruet_id}}",
+							"raw": "http://localhost:{{port}}/werewolf/player/{{pruet_id}}",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"player",
@@ -703,7 +703,6 @@
 							"listen": "test",
 							"script": {
 								"id": "eef3a8ee-8907-4fe2-a8af-200be3078767",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -713,7 +712,8 @@
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.length).to.eql(0);",
 									"});"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -727,12 +727,12 @@
 						],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/player/",
+							"raw": "http://localhost:{{port}}/werewolf/player/",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"player",
@@ -762,12 +762,12 @@
 							"raw": "{\n\t\"name\":\"lulu\",\n\t\"password\":\"lulu\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/player/",
+							"raw": "http://localhost:{{port}}/werewolf/player/",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"player",
@@ -792,12 +792,12 @@
 							"raw": "{\n\t\"name\":\"pruet\",\n\t\"password\":\"Qwertyu8\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/player/",
+							"raw": "http://localhost:{{port}}/werewolf/player/",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"player",
@@ -814,7 +814,6 @@
 							"listen": "test",
 							"script": {
 								"id": "6a07b270-f95d-4ccf-91c1-6a10dd1303b7",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 201\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -822,7 +821,8 @@
 									"    pm.environment.set(\"lulu_session\", jsonData.session );",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -839,12 +839,12 @@
 							"raw": "{\n\t\"name\":\"lulu\",\n\t\"password\":\"lulu\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/player/login/",
+							"raw": "http://localhost:{{port}}/werewolf/player/login/",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"player",
@@ -862,7 +862,6 @@
 							"listen": "test",
 							"script": {
 								"id": "4b8a5967-2a3d-4d68-b49d-c3e09e517d93",
-								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 201\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -870,7 +869,8 @@
 									"    pm.environment.set(\"pruet_session\", jsonData.session );",
 									"});",
 									""
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -887,12 +887,12 @@
 							"raw": "{\n\t\"name\":\"pruet\",\n\t\"password\":\"Qwertyu8\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/player/login/",
+							"raw": "http://localhost:{{port}}/werewolf/player/login/",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"player",
@@ -910,12 +910,12 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/game/session/{{pruet_session}}",
+							"raw": "http://localhost:{{port}}/werewolf/game/session/{{pruet_session}}",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"game",
@@ -933,12 +933,12 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/werewolf/game/session/{{lulu_session}}",
+							"raw": "http://localhost:{{port}}/werewolf/game/session/{{lulu_session}}",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8080",
+							"port": "{{port}}",
 							"path": [
 								"werewolf",
 								"game",
