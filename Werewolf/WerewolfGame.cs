@@ -76,7 +76,6 @@ namespace DNWS.Werewolf
         public static int GAME_DAY_PERIOD = 10;
         public static int GAME_NIGHT_PERIOD = 10;
         public static int GAME_MAX_DAY = 10;
-        private static WerewolfContext _db;
 
         private static List<IObserver<WerewolfEvent>> observers = null;
 
@@ -93,23 +92,24 @@ namespace DNWS.Werewolf
         }
         public WerewolfGame()
         {
-            // DI
-            _db = new WerewolfContext();
-            try
+            using (WerewolfContext _db = new WerewolfContext())
             {
-                if (!_roleInitialized)
+                try
                 {
-                    InitRoles();
+                    if (!_roleInitialized)
+                    {
+                        InitRoles();
+                    }
+                    if (!_actionInitialized)
+                    {
+                        InitActions();
+                    }
+                    //FIXME, should move to database init part
                 }
-                if (!_actionInitialized)
+                catch (Exception ex)
                 {
-                    InitActions();
+                    Console.Out.WriteLine(ex.ToString());
                 }
-                //FIXME, should move to database init part
-            }
-            catch (Exception ex)
-            {
-                Console.Out.WriteLine(ex.ToString());
             }
             if (observers == null)
             {
@@ -133,12 +133,15 @@ namespace DNWS.Werewolf
         }
         public List<Game> GetGames()
         {
-            return DeepClone<List<Game>>(_db.Games.Include(game => game.Players).ToList());
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                return DeepClone<List<Game>>(_db.Games.Include(game => game.Players).ToList());
+            }
         }
         public Game GetGame(string id)
         {
             long lid = Int64.Parse(id);
-            using( WerewolfContext _db = new WerewolfContext())
+            using (WerewolfContext _db = new WerewolfContext())
             {
                 return DeepClone<Game>(_db.Games.Include(game => game.Players).ThenInclude(player => player.Role).Where(game => game.Id == lid).ToList()[0]);
             }
@@ -146,76 +149,94 @@ namespace DNWS.Werewolf
         public void SetGameDay(string id, int day)
         {
             long lid = Int64.Parse(id);
-            using( WerewolfContext _db = new WerewolfContext())
+            using (WerewolfContext _db = new WerewolfContext())
             {
-                Game g = _db.Games.Where(game => game.Id == lid).ToList()[0];
-                g.Day = day;
+                Game game = _db.Games.Where(g => g.Id == lid).ToList()[0];
+                game.Day = day;
+                _db.Games.Update(game);
                 _db.SaveChanges();
             }
         }
         public void SetGamePeriod(string id, Game.PeriodEnum p)
         {
             long lid = Int64.Parse(id);
-            using( WerewolfContext _db = new WerewolfContext())
+            using (WerewolfContext _db = new WerewolfContext())
             {
-                Game g = _db.Games.Where(game => game.Id == lid).ToList()[0];
-                g.Period = p;
+                Game game = _db.Games.Where(g => g.Id == lid).ToList()[0];
+                game.Period = p;
+                _db.Games.Update(game);
                 _db.SaveChanges();
             }
         }
         public void SetGameOutcome(string id, Game.OutcomeEnum o)
         {
             long lid = Int64.Parse(id);
-            using( WerewolfContext _db = new WerewolfContext())
+            using (WerewolfContext _db = new WerewolfContext())
             {
-                Game g = _db.Games.Where(game => game.Id == lid).ToList()[0];
-                g.Outcome = o;
+                Game game = _db.Games.Where(g => g.Id == lid).ToList()[0];
+                game.Outcome = o;
+                _db.Games.Update(game);
                 _db.SaveChanges();
             }
         }
         public void SetGameStatus(string id, Game.StatusEnum s)
         {
             long lid = Int64.Parse(id);
-            using( WerewolfContext _db = new WerewolfContext())
+            using (WerewolfContext _db = new WerewolfContext())
             {
-                Game g = _db.Games.Where(game => game.Id == lid).ToList()[0];
-                g.Status = s;
+                Game game = _db.Games.Where(g => g.Id == lid).ToList()[0];
+                game.Status = s;
+                _db.Games.Update(game);
                 _db.SaveChanges();
             }
         }
         public void StartGame(string id)
         {
-            long lid = Int64.Parse(id);
-            Game game = _db.Games.Where(g => g.Id == lid).ToList()[0];
+            Game game = null;
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                long lid = Int64.Parse(id);
+                game = _db.Games.Where(g => g.Id == lid).ToList()[0];
+                if (game != null)
+                {
+                    game.Status = Game.StatusEnum.PlayingEnum;
+                    game.ResetDayVoteList();
+                    game.ResetNightVoteList();
+                }
+                else
+                {
+                    throw new Exception();
+                }
+                _db.Games.Update(game);
+                _db.SaveChanges();
+            }
             if (game != null)
             {
-                game.Status = Game.StatusEnum.PlayingEnum;
-                game.ResetDayVoteList();
-                game.ResetNightVoteList();
+                NotifyObserver(WerewolfEvent.GAME_STARTED, game.Id);
             }
-            else
-            {
-                throw new Exception();
-            }
-            _db.Games.Update(game);
-            _db.SaveChanges();
-            NotifyObserver(WerewolfEvent.GAME_STARTED, game.Id);
         }
 
         public void DeleteGame(string id)
         {
             long lid = Int64.Parse(id);
-            Game game = _db.Games.Where(g => g.Id == lid).ToList()[0];
+            Game game = null;
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                game = _db.Games.Where(g => g.Id == lid).ToList()[0];
+                if (game != null)
+                {
+                    _db.Games.Remove(game);
+                }
+                else
+                {
+                    throw new Exception();
+                }
+                _db.SaveChanges();
+            } 
             if (game != null)
             {
-                _db.Games.Remove(game);
+                NotifyObserver(WerewolfEvent.GAME_DELETED, game.Id);
             }
-            else
-            {
-                throw new Exception();
-            }
-            _db.SaveChanges();
-            NotifyObserver(WerewolfEvent.GAME_DELETED, game.Id);
         }
         public Game CreateGame()
         {
@@ -224,59 +245,74 @@ namespace DNWS.Werewolf
             game.Status = Game.StatusEnum.WaitingEnum;
             //game.Players = new List<Player>();
             game.Period = Game.PeriodEnum.ProcessingEnum;
-            _db.Games.Add(game);
-            _db.SaveChanges();
-            NotifyObserver(WerewolfEvent.GAME_CREATED, game.Id);
-            return DeepClone<Game>(_db.Games.OrderBy(g => g.Id).Last());
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                _db.Games.Add(game);
+                _db.SaveChanges();
+                NotifyObserver(WerewolfEvent.GAME_CREATED, game.Id);
+                return DeepClone<Game>(_db.Games.OrderBy(g => g.Id).Last());
+            }
         }
         public Game JoinGame(Game g, Player p)
         {
-            Game game = _db.Games.Where(_g => _g.Id == g.Id).Include(_game => _game.Players).ToList()[0];
-            if (game.Status != Game.StatusEnum.WaitingEnum)
+            using (WerewolfContext _db = new WerewolfContext())
             {
-                throw new Exception("Game is already ended or running");
+                Game game = _db.Games.Where(_g => _g.Id == g.Id).Include(_game => _game.Players).ToList()[0];
+                if (game.Status != Game.StatusEnum.WaitingEnum)
+                {
+                    throw new Exception("Game is already ended or running");
+                }
+                List<Player> players = game.Players.ToList();
+                if (players.Count >= MAX_PLAYERS)
+                {
+                    throw new Exception("Game is fulled already");
+                }
+                Player player = _db.Players.Where(_p => _p.Id == p.Id).ToList()[0];
+                if (players.Contains(player))
+                {
+                    throw new Exception("User in game already");
+                }
+                //player.Game = game.GameId.ToString();
+                player.Status = Player.StatusEnum.AliveEnum;
+                players.Add(player);
+                game.Players = players;
+                _db.Games.Update(game);
+                _db.Players.Update(player);
+                _db.SaveChanges();
+                NotifyObserver(WerewolfEvent.PLAYER_JOIN, game.Id);
+                return DeepClone<Game>(game);
             }
-            List<Player> players = game.Players.ToList();
-            if (players.Count >= MAX_PLAYERS)
-            {
-                throw new Exception("Game is fulled already");
-            }
-            Player player = _db.Players.Where(_p => _p.Id == p.Id).ToList()[0];
-            if (players.Contains(player))
-            {
-                throw new Exception("User in game already");
-            }
-            //player.Game = game.GameId.ToString();
-            player.Status = Player.StatusEnum.AliveEnum;
-            players.Add(player);
-            game.Players = players;
-            _db.Games.Update(game);
-            _db.Players.Update(player);
-            _db.SaveChanges();
-            NotifyObserver(WerewolfEvent.PLAYER_JOIN, game.Id);
-            return DeepClone<Game>(game);
         }
         public Game LeaveGame(Game g, Player p)
         {
-            Game game = _db.Games.Where(_g => _g.Id == g.Id).ToList()[0];
-            List<Player> players = game.Players.ToList();
-            Player player = _db.Players.Where(_p => _p.Id == p.Id).ToList()[0];
-            players.Remove(player);
-            player.Status = Player.StatusEnum.NotInGameEnum;
-            game.Players = players;
-            _db.Games.Update(game);
-            _db.Players.Update(player);
-            _db.SaveChanges();
-            return DeepClone<Game>(game);
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                Game game = _db.Games.Where(_g => _g.Id == g.Id).ToList()[0];
+                List<Player> players = game.Players.ToList();
+                Player player = _db.Players.Where(_p => _p.Id == p.Id).ToList()[0];
+                players.Remove(player);
+                player.Status = Player.StatusEnum.NotInGameEnum;
+                game.Players = players;
+                _db.Games.Update(game);
+                _db.Players.Update(player);
+                _db.SaveChanges();
+                return DeepClone<Game>(game);
+            }
         }
         public List<Player> GetPlayers()
         {
-            return DeepClone<List<Player>>(_db.Players.ToList());
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                return DeepClone<List<Player>>(_db.Players.ToList());
+            }
         }
         public Player GetPlayer(string id)
         {
             long lid = Int64.Parse(id);
-            return DeepClone<Player>(_db.Players.Where(player => player.Id == lid).Include(player => player.Role).ToList()[0]);
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                return DeepClone<Player>(_db.Players.Where(player => player.Id == lid).Include(player => player.Role).ToList()[0]);
+            }
         }
         public bool IsPlayerDead(string id)
         {
@@ -289,149 +325,206 @@ namespace DNWS.Werewolf
                 Player.StatusEnum.KillDeadEnum,
             };
             long lid = Int64.Parse(id);
-            Player player = _db.Players.Where(_p => _p.Id == lid).ToList()[0];
-            foreach (Player.StatusEnum reason in deadReasonArray)
+            using (WerewolfContext _db = new WerewolfContext())
             {
-                if (player.Status == reason)
+                Player player = _db.Players.Where(_p => _p.Id == lid).ToList()[0];
+                foreach (Player.StatusEnum reason in deadReasonArray)
                 {
-                    return true;
+                    if (player.Status == reason)
+                    {
+                        return true;
+                    }
                 }
+                return false;
             }
-            return false;
         }
         public Player GetPlayerByName(string name)
         {
-            return DeepClone<Player>(_db.Players.Where(player => player.Name.ToUpper() == name.ToUpper()).ToList()[0]);
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                return DeepClone<Player>(_db.Players.Where(player => player.Name.ToUpper() == name.ToUpper()).ToList()[0]);
+            }
         }
         public Boolean IsPlayerExists(string name)
         {
-            if (_db.Players.Where(player => player.Name.ToUpper() == name.ToUpper()).Count() > 0)
+            using (WerewolfContext _db = new WerewolfContext())
             {
-                return true;
+                if (_db.Players.Where(player => player.Name.ToUpper() == name.ToUpper()).Count() > 0)
+                {
+                    return true;
+                }
+                return false;
             }
-            return false;
         }
         public Player GetPlayerBySession(string session)
         {
-            //return DeepClone<Player>(_db.Players.Where(player => player.Session == session).Include(player => player.Game).ThenInclude(game => game.Players).ThenInclude(p => p.Role).ThenInclude(r => r.ActionRoles).ToList()[0]);
-            List<Player> players = _db.Players.Where(player => player.Session == session).Include(player => player.Game).ThenInclude(game => game.Players).ThenInclude(p => p.Role).ThenInclude(r => r.ActionRoles).ToList();
-            if (players.Count > 0)
+            List<Player> players = null;
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                //return DeepClone<Player>(_db.Players.Where(player => player.Session == session).Include(player => player.Game).ThenInclude(game => game.Players).ThenInclude(p => p.Role).ThenInclude(r => r.ActionRoles).ToList()[0]);
+                try
+                {
+                    players = _db.Players.Where(player => player.Session == session).Include(player => player.Game).ThenInclude(game => game.Players).ThenInclude(p => p.Role).ThenInclude(r => r.ActionRoles).ToList();
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            }
+            if (players != null && players.Count > 0)
             {
                 return DeepClone<Player>(players[0]);
             }
-            throw new Exception();
+            return null;
         }
         public List<Player> GetPlayerByGame(string gameid)
         {
             long gid = Int64.Parse(gameid);
-            Game _game = _db.Games.Where(game => game.Id == gid).Include(game => game.Players).ToList()[0];
-            return DeepClone<List<Player>>(_game.Players.ToList());
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                Game _game = _db.Games.Where(game => game.Id == gid).Include(game => game.Players).ToList()[0];
+                return DeepClone<List<Player>>(_game.Players.ToList());
+            }
         }
         public void AddPlayer(Player player)
         {
-            _db.Players.Add(player);
-            _db.SaveChanges();
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                _db.Players.Add(player);
+                _db.SaveChanges();
+            }
         }
         public void UpdatePlayer(Player player)
         {
-            Player p = _db.Players.Where(pr => pr.Id == player.Id).ToList()[0];
-            if (p == null)
+            using (WerewolfContext _db = new WerewolfContext())
             {
-                throw new Exception("User not found");
-            }
-            if (p.Name != player.Name)
-            {
-                throw new Exception("Not allow to change name");
-            }
-            if (p != null)
-            {
-                p.Password = player.Password;
-                p.Session = player.Session;
-                p.GameId = player.GameId;
-                if (p.GameId == null)
+                Player p = _db.Players.Where(pr => pr.Id == player.Id).ToList()[0];
+                if (p == null)
                 {
-                    p.Game = null;
+                    throw new Exception("User not found");
+                }
+                if (p.Name != player.Name)
+                {
+                    throw new Exception("Not allow to change name");
+                }
+                if (p != null)
+                {
+                    p.Password = player.Password;
+                    p.Session = player.Session;
+                    p.GameId = player.GameId;
+                    if (p.GameId == null)
+                    {
+                        p.Game = null;
+                    }
+                    else
+                    {
+                        p.Game = _db.Games.Where(g => g.Id == player.GameId).ToList()[0];
+                    }
+                    if (player.Role != null)
+                    {
+                        p.Role = _db.Roles.Where(r => r.Id == player.Role.Id).ToList()[0];
+                    }
+                    _db.Players.Update(p);
+                    _db.SaveChanges();
                 }
                 else
                 {
-                    p.Game = _db.Games.Where(g => g.Id == player.GameId).ToList()[0];
+                    throw new Exception("Player not found");
                 }
-                if (player.Role != null)
-                {
-                    p.Role = _db.Roles.Where(r => r.Id == player.Role.Id).ToList()[0];
-                }
-                _db.Players.Update(p);
-                _db.SaveChanges();
-            }
-            else
-            {
-                throw new Exception("Player not found");
             }
         }
         public void DeletePlayer(string id)
         {
             long lid = Int64.Parse(id);
-            Player player = _db.Players.Where(p => p.Id == lid).ToList()[0];
-            if (player != null)
+            using (WerewolfContext _db = new WerewolfContext())
             {
-                _db.Players.Remove(player);
+                Player player = _db.Players.Where(p => p.Id == lid).ToList()[0];
+                if (player != null)
+                {
+                    _db.Players.Remove(player);
+                }
+                else
+                {
+                    throw new Exception();
+                }
+                _db.SaveChanges();
             }
-            else
-            {
-                throw new Exception();
-            }
-            _db.SaveChanges();
         }
         public void SetPlayerStatus(string id, Player.StatusEnum status)
         {
             long lid = Int64.Parse(id);
-            Player player = _db.Players.Where(p => p.Id == lid).ToList()[0];
-            player.Status = status;
-            _db.SaveChanges();
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                Player player = _db.Players.Where(p => p.Id == lid).ToList()[0];
+                player.Status = status;
+                _db.Players.Update(player);
+                _db.SaveChanges();
+            }
         }
         public List<Action> GetActions()
         {
-            return DeepClone<List<Action>>(_db.Actions.Include(ar => ar.ActionRoles).ThenInclude(r => r.Role).ToList());
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                return DeepClone<List<Action>>(_db.Actions.Include(ar => ar.ActionRoles).ThenInclude(r => r.Role).ToList());
+            }
         }
         public Action GetAction(string id)
         {
             // Throws exception
             long lid = Int64.Parse(id);
-            return DeepClone<Action>(_db.Actions.Where(action => action.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(r => r.Role).ToList()[0]);
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                return DeepClone<Action>(_db.Actions.Where(action => action.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(r => r.Role).ToList()[0]);
+            }
         }
         private Action GetActionByName(string name)
         {
-            return DeepClone<Action>(_db.Actions.Where(action => action.Name == name).ToList()[0]);
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                return DeepClone<Action>(_db.Actions.Where(action => action.Name == name).ToList()[0]);
+            }
         }
         public List<Action> GetActionByRoleId(string id)
         {
             long lid = Int64.Parse(id);
             //return DeepClone<List<Action>>(_db.Actions.Where(action => action.Roles.Any(role => role.RoleId == lid)).ToList());
-            Role role = _db.Roles.Where(r => r.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(a => a.Action).ToList()[0];
-            List<Action> actions = new List<Action>();
-            foreach (ActionRole ar in role.ActionRoles)
+            using (WerewolfContext _db = new WerewolfContext())
             {
-                // ar.Action.ActionRoles = null;
-                // ar.Action.Roles = null;
-                actions.Add(ar.Action);
+                Role role = _db.Roles.Where(r => r.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(a => a.Action).ToList()[0];
+                List<Action> actions = new List<Action>();
+                foreach (ActionRole ar in role.ActionRoles)
+                {
+                    // ar.Action.ActionRoles = null;
+                    // ar.Action.Roles = null;
+                    actions.Add(ar.Action);
+                }
+                return actions;
             }
-            return actions;
             //return DeepClone<List<Action>>(role.Actions.ToList());
             //return DeepClone<List<Action>>(_db.Roles.Where(r => r.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(a => a.Action).ToList()[0].Actions.ToList());
         }
         public List<Role> GetRoles()
         {
-            return DeepClone<List<Role>>(_db.Roles.Include(ar => ar.ActionRoles).ThenInclude(a => a.Action).ToList());
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                return DeepClone<List<Role>>(_db.Roles.Include(ar => ar.ActionRoles).ThenInclude(a => a.Action).ToList());
+            }
         }
         public Role GetRole(string id)
         {
             // Throws exception
             long lid = Int64.Parse(id);
-            return DeepClone<Role>(_db.Roles.Where(role => role.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(a => a.Action).ToList()[0]);
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                return DeepClone<Role>(_db.Roles.Where(role => role.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(a => a.Action).ToList()[0]);
+            }
         }
         public Role GetRoleByName(string name)
         {
-            return DeepClone<Role>(_db.Roles.Where(role => role.Name == name).ToList()[0]);
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                return DeepClone<Role>(_db.Roles.Where(role => role.Name == name).ToList()[0]);
+            }
         }
         public OutcomeEnum PostAction(string sessionID, string actionID, string targetID)
         {
@@ -620,6 +713,11 @@ namespace DNWS.Werewolf
                     {
                         game.ProtectedByBodyguard = target;
                     }
+                    using (WerewolfContext _db = new WerewolfContext())
+                    {
+                        _db.Games.Update(game);
+                        _db.SaveChanges();
+                    }
                     return OutcomeEnum.ActionPerformedEnum;
                 }
                 else if (action.Name == WerewolfGame.ACTION_HEAL)
@@ -632,6 +730,11 @@ namespace DNWS.Werewolf
                     {
                         game.HealedByDoctor = target;
                     }
+                    using (WerewolfContext _db = new WerewolfContext())
+                    {
+                        _db.Games.Update(game);
+                        _db.SaveChanges();
+                    }
                     return OutcomeEnum.ActionPerformedEnum;
                 }
                 else if (action.Name == WerewolfGame.ACTION_KILL)
@@ -643,6 +746,11 @@ namespace DNWS.Werewolf
                     else
                     {
                         game.KillBySerialKiller = target;
+                    }
+                    using (WerewolfContext _db = new WerewolfContext())
+                    {
+                        _db.Games.Update(game);
+                        _db.SaveChanges();
                     }
                     return OutcomeEnum.ActionPerformedEnum;
                 }
@@ -697,11 +805,25 @@ namespace DNWS.Werewolf
                 observer.OnNext(we);
             }
         }
+        public void ResetGameState(string id)
+        {
+            long lid = long.Parse(id);
+            using (WerewolfContext _db = new WerewolfContext())
+            {
+                Game game = _db.Games.Where(g => g.Id == lid).ToList()[0];
+                game.KillBySerialKiller = null;
+                game.HealedByDoctor = null;
+                game.Jailed = null;
+                game.ProtectedByBodyguard = null;
+                game.ResetNightVoteList();
+                game.ResetDayVoteList();
+                _db.Games.Update(game);
+                _db.SaveChanges();
+            }
+        }
 
         public void Dispose()
         {
-            _db.SaveChanges();
-            _db = null;
         }
     }
 }

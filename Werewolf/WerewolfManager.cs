@@ -153,6 +153,7 @@ namespace DNWS.Werewolf
                         werewolf.SetGamePeriod(gameId, Game.PeriodEnum.NightEnum);
                     }
                     Console.WriteLine("Game[{0}]: OnTimedEvent", _game.Id);
+                    // Check shooting
                     timeCounter++;
                     if (_game.Period == Game.PeriodEnum.NightEnum && timeCounter >= WerewolfGame.GAME_NIGHT_PERIOD)
                     {
@@ -186,14 +187,14 @@ namespace DNWS.Werewolf
                                 werewolf.SetPlayerStatus(bodyguard.Id.ToString(), Player.StatusEnum.VoteDeadEnum);
                             }
                         }
-                        else if (maxVote != null && maxVote != _game.HealedByDoctor.Id)
+                        else if (maxVote != null && !(_game.HealedByDoctor != null && maxVote == _game.HealedByDoctor.Id))
                         {
                             werewolf.SetPlayerStatus(maxVote.ToString(), Player.StatusEnum.VoteDeadEnum);
                         }
                         _game.ResetNightVoteList();
                         // Serial killer's victim
                         Player victim = _game.KillBySerialKiller;
-                        if (victim == _game.ProtectedByBodyguard && _game.BodyguardHit > 0)
+                        if (victim !=null && victim == _game.ProtectedByBodyguard && _game.BodyguardHit > 0)
                         {
                             _game.BodyguardHit--;
                             if (_game.BodyguardHit == 0)
@@ -202,11 +203,11 @@ namespace DNWS.Werewolf
                                 werewolf.SetPlayerStatus(bodyguard.Id.ToString(), Player.StatusEnum.KillDeadEnum);
                             }
                         }
-                        else if (victim != _game.HealedByDoctor)
+                        else if (victim != null && victim != _game.HealedByDoctor)
                         {
                             werewolf.SetPlayerStatus(_game.KillBySerialKiller.Id.ToString(), Player.StatusEnum.KillDeadEnum);
                         }
-                        _game.KillBySerialKiller = null;
+                        werewolf.ResetGameState(_game.Id.ToString());
                         timeCounter = 0;
                         werewolf.SetGameOutcome(gameId, CheckWinner());
                         werewolf.SetGamePeriod(gameId, Game.PeriodEnum.DayEnum);
@@ -243,6 +244,7 @@ namespace DNWS.Werewolf
                         }
                         _game.ResetDayVoteList();
                         timeCounter = 0;
+                        werewolf.ResetGameState(_game.Id.ToString());
                         werewolf.SetGameOutcome(gameId, CheckWinner());
                         werewolf.SetGameDay(gameId, (int)_game.Day + 1);
                         werewolf.SetGamePeriod(gameId, Game.PeriodEnum.NightEnum);

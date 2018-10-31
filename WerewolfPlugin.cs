@@ -408,6 +408,11 @@ namespace DNWS
                             {
                                 // Player not found
                                 Console.WriteLine(ex.ToString());
+                                response.Status = 400;
+                                return response;
+                            }
+                            if (player == null)
+                            {
                                 response.Status = 404;
                                 return response;
                             }
@@ -476,6 +481,11 @@ namespace DNWS
                                     act.Outcome = OutcomeEnum.RevealedEnum;
                                     act.Target = WerewolfGame.ROLE_ALPHA_WEREWOLF;
                                     //response.SetBodyString("{\"outcome\":\"revealed\",\"role\":\"{" + WerewolfGame.ROLE_ALPHA_WEREWOLF + "}\"}");
+                                }
+                                else if (outcome == OutcomeEnum.TargetDeadEnum)
+                                {
+                                    act.Outcome = OutcomeEnum.TargetDeadEnum;
+                                    act.Target = targetID;
                                 }
                                 else
                                 {
