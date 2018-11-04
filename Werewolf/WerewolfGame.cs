@@ -77,6 +77,11 @@ namespace DNWS.Werewolf
         public static int GAME_NIGHT_PERIOD = 10;
         public static int GAME_MAX_DAY = 10;
 
+        private ChatMessageChannel deadChannel;
+        private ChatMessageChannel dayChannel;
+        private ChatMessageChannel wolfChannel;
+        private ChatMessageChannel jailChannel;
+
         private static List<IObserver<WerewolfEvent>> observers = null;
 
         public Int64 CurrentGameId
@@ -115,6 +120,10 @@ namespace DNWS.Werewolf
             {
                 observers = new List<IObserver<WerewolfEvent>>();
             }
+            dayChannel = new ChatMessageChannel();
+            deadChannel = new ChatMessageChannel();
+            wolfChannel = new ChatMessageChannel();
+            jailChannel = new ChatMessageChannel();
         }
 
         private static T DeepClone<T>(T obj)
@@ -130,6 +139,14 @@ namespace DNWS.Werewolf
                 ms.Position = 0;
                 return (T)formatter.Deserialize(ms);
             }
+        }
+
+        private bool IsWerewolf(string role)
+        {
+            return ((new[] {WerewolfGame.ROLE_WEREWOLF,
+                        WerewolfGame.ROLE_ALPHA_WEREWOLF,
+                        WerewolfGame.ROLE_WEREWOLF_SEER,
+                        WerewolfGame.ROLE_WEREWOLF_SHAMAN}).Contains(role));
         }
         public List<Game> GetGames()
         {
@@ -205,7 +222,7 @@ namespace DNWS.Werewolf
                 }
                 else
                 {
-                    throw new Exception();
+                    throw new GameNotFoundWerewolfException();
                 }
                 _db.Games.Update(game);
                 _db.SaveChanges();
@@ -229,7 +246,7 @@ namespace DNWS.Werewolf
                 }
                 else
                 {
-                    throw new Exception();
+                    throw new GameNotFoundWerewolfException();
                 }
                 _db.SaveChanges();
             } 
@@ -260,17 +277,17 @@ namespace DNWS.Werewolf
                 Game game = _db.Games.Where(_g => _g.Id == g.Id).Include(_game => _game.Players).ToList()[0];
                 if (game.Status != Game.StatusEnum.WaitingEnum)
                 {
-                    throw new Exception("Game is already ended or running");
+                    throw new GameNotPlayableWerewolfException("Game is already ended or running");
                 }
                 List<Player> players = game.Players.ToList();
                 if (players.Count >= MAX_PLAYERS)
                 {
-                    throw new Exception("Game is fulled already");
+                    throw new GameNotPlayableWerewolfException("Game is fulled already");
                 }
                 Player player = _db.Players.Where(_p => _p.Id == p.Id).ToList()[0];
                 if (players.Contains(player))
                 {
-                    throw new Exception("User in game already");
+                    throw new PlayerInGameAlreadyWerewolfException("User in game already");
                 }
                 //player.Game = game.GameId.ToString();
                 player.Status = Player.StatusEnum.AliveEnum;
@@ -366,9 +383,9 @@ namespace DNWS.Werewolf
                 {
                     players = _db.Players.Where(player => player.Session == session).Include(player => player.Game).ThenInclude(game => game.Players).ThenInclude(p => p.Role).ThenInclude(r => r.ActionRoles).ToList();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    throw ex;
+                    throw new PlayerNotFoundWerewolfException();
                 }
             }
             if (players != null && players.Count > 0)
@@ -401,36 +418,29 @@ namespace DNWS.Werewolf
                 Player p = _db.Players.Where(pr => pr.Id == player.Id).ToList()[0];
                 if (p == null)
                 {
-                    throw new Exception("User not found");
+                    throw new PlayerNotFoundWerewolfException("User not found");
                 }
                 if (p.Name != player.Name)
                 {
                     throw new Exception("Not allow to change name");
                 }
-                if (p != null)
+                p.Password = player.Password;
+                p.Session = player.Session;
+                p.GameId = player.GameId;
+                if (p.GameId == null)
                 {
-                    p.Password = player.Password;
-                    p.Session = player.Session;
-                    p.GameId = player.GameId;
-                    if (p.GameId == null)
-                    {
-                        p.Game = null;
-                    }
-                    else
-                    {
-                        p.Game = _db.Games.Where(g => g.Id == player.GameId).ToList()[0];
-                    }
-                    if (player.Role != null)
-                    {
-                        p.Role = _db.Roles.Where(r => r.Id == player.Role.Id).ToList()[0];
-                    }
-                    _db.Players.Update(p);
-                    _db.SaveChanges();
+                    p.Game = null;
                 }
                 else
                 {
-                    throw new Exception("Player not found");
+                    p.Game = _db.Games.Where(g => g.Id == player.GameId).ToList()[0];
                 }
+                if (player.Role != null)
+                {
+                    p.Role = _db.Roles.Where(r => r.Id == player.Role.Id).ToList()[0];
+                }
+                _db.Players.Update(p);
+                _db.SaveChanges();
             }
         }
         public void DeletePlayer(string id)
@@ -445,7 +455,7 @@ namespace DNWS.Werewolf
                 }
                 else
                 {
-                    throw new Exception();
+                    throw new PlayerNotFoundWerewolfException();
                 }
                 _db.SaveChanges();
             }
@@ -519,11 +529,105 @@ namespace DNWS.Werewolf
                 return DeepClone<Role>(_db.Roles.Where(role => role.Id == lid).Include(ar => ar.ActionRoles).ThenInclude(a => a.Action).ToList()[0]);
             }
         }
+
         public Role GetRoleByName(string name)
         {
             using (WerewolfContext _db = new WerewolfContext())
             {
                 return DeepClone<Role>(_db.Roles.Where(role => role.Name == name).ToList()[0]);
+            }
+        }
+
+        public List<ChatMessage> GetMessages(string sessionID, string lastID)
+        {
+            Player player;
+            Game game;
+            try
+            {
+                player = GetPlayerBySession(sessionID);
+            }
+            catch (Exception)
+            {
+                throw new PlayerNotFoundWerewolfException("Player not found.");
+            }
+            if (player.Status != Player.StatusEnum.AliveEnum)
+            {
+                throw new PlayerIsNotAliveWerewolfException("Player is not alived.");
+            }
+            game = GetGame(player.Game.Id.ToString());
+            if (game == null)
+            {
+                throw new PlayerIsNotInGameWerewolfException("Player is not in a game.");
+            }
+            if (game.Period == Game.PeriodEnum.ProcessingEnum)
+            {
+                throw new PlayerIsNotAllowToChatWerewolfException("Please wait for processing.");
+            }
+            if (game.Period == Game.PeriodEnum.DayEnum && player.Status == Player.StatusEnum.AliveEnum)
+            {
+                return dayChannel.GetSince(lastID);
+            }
+            else
+            {
+                if (player.Status != Player.StatusEnum.AliveEnum || player.Role.Name == WerewolfGame.ROLE_MEDIUM)
+                {
+                    return deadChannel.GetSince(lastID);
+                }
+                else if (IsWerewolf(player.Role.Name))
+                {
+                    return wolfChannel.GetSince(lastID);
+                }
+                else if (player.Role.Name == WerewolfGame.ROLE_JAILER || (game.Jailed != null && game.Jailed.Id == player.Id))
+                {
+                    return jailChannel.GetSince(lastID);
+                }
+                throw new PlayerIsNotAllowToChatWerewolfException("You're not allow to talk now");
+            }
+        }
+        public void PostMessage(string sessionID, ChatMessage message)
+        {
+            Player player;
+            Game game;
+            try
+            {
+                player = GetPlayerBySession(sessionID);
+            }
+            catch (Exception)
+            {
+                throw new PlayerNotFoundWerewolfException("Player not found.");
+            }
+            if (player.Status != Player.StatusEnum.AliveEnum)
+            {
+                throw new PlayerIsNotAliveWerewolfException("Player is not alived.");
+            }
+            game = GetGame(player.Game.Id.ToString());
+            if (game == null)
+            {
+                throw new PlayerIsNotInGameWerewolfException("Player is not in a game.");
+            }
+            if (game.Period == Game.PeriodEnum.ProcessingEnum)
+            {
+                throw new PlayerIsNotAllowToChatWerewolfException("Please wait for processing.");
+            }
+            if (game.Period == Game.PeriodEnum.DayEnum)
+            {
+                dayChannel.Add(message);
+            }
+            else
+            {
+                if (player.Status != Player.StatusEnum.AliveEnum || player.Role.Name == WerewolfGame.ROLE_MEDIUM)
+                {
+                    deadChannel.Add(message);
+                }
+                else if (IsWerewolf(player.Role.Name))
+                {
+                    wolfChannel.Add(message);
+                }
+                else if (player.Role.Name == WerewolfGame.ROLE_JAILER || game.Jailed.Id == player.Id)
+                {
+                    jailChannel.Add(message);
+                }
+                throw new PlayerIsNotAllowToChatWerewolfException("You're not allow to chat now.");
             }
         }
         public OutcomeEnum PostAction(string sessionID, string actionID, string targetID)
@@ -540,11 +644,11 @@ namespace DNWS.Werewolf
             }
             catch (Exception)
             {
-                throw new Exception("Player not found.");
+                throw new PlayerNotFoundWerewolfException("Player not found.");
             }
             if (player.Status != Player.StatusEnum.AliveEnum)
             {
-                throw new Exception("Player is not alived.");
+                throw new PlayerIsNotAliveWerewolfException("Player is not alived.");
             }
             try
             {
@@ -552,7 +656,7 @@ namespace DNWS.Werewolf
             }
             catch (Exception)
             {
-                throw new Exception("Action not found.");
+                throw new ActionNotFoundWerewolfException("Action not found.");
             }
             try
             {
@@ -560,36 +664,36 @@ namespace DNWS.Werewolf
             }
             catch (Exception)
             {
-                throw new Exception("Target not found.");
+                throw new TargetNotFoundWerewolfException("Target not found.");
             }
             if (target.Id == player.Id)
             {
-                throw new Exception("You can't perform on yourself.");
+                throw new CantPerformOnYourselfWerewolfException("You can't perform on yourself.");
             }
             game = GetGame(player.Game.Id.ToString());
             if (game == null)
             {
-                throw new Exception("Player is not in a game.");
+                throw new PlayerIsNotInGameWerewolfException("Player is not in a game.");
             }
             if (game.Period == Game.PeriodEnum.ProcessingEnum)
             {
-                throw new Exception("Please wait for processing.");
+                throw new ProcessingPeriodWerewolfException("Please wait for processing.");
             }
             role = GetRole(player.Role.Id.ToString());
 
             if (role == null)
             {
-                throw new Exception("Player does not have any role.");
+                throw new PlayerNotFoundWerewolfException("Player does not have any role.");
             }
             List<int> action_ids = role.ActionRoles.Select(ar => ar.Action.Id).ToList();
             //if (!role.Actions.Contains(action))
             if (!action_ids.Contains(action.Id))
             {
-                throw new Exception("Player's role does not have this action.");
+                throw new ActionNotFoundWerewolfException("Player's role does not have this action.");
             }
             if (game.Status != Game.StatusEnum.PlayingEnum)
             {
-                throw new Exception("Game is not playable.");
+                throw new GameNotPlayableWerewolfException("Game is not playable.");
             }
             if (game.Period == Game.PeriodEnum.DayEnum)
             {
@@ -645,10 +749,7 @@ namespace DNWS.Werewolf
                 }
                 else if (action.Name == WerewolfGame.ACTION_HOLYWATER)
                 {
-                    if ((new[] {WerewolfGame.ROLE_WEREWOLF,
-                                WerewolfGame.ROLE_ALPHA_WEREWOLF,
-                                WerewolfGame.ROLE_WEREWOLF_SEER,
-                                WerewolfGame.ROLE_WEREWOLF_SHAMAN}).Contains(target.Role.Name))
+                    if (IsWerewolf(target.Role.Name))
                     {
                         SetPlayerStatus(target.Id.ToString(), Player.StatusEnum.HolyDeadEnum);
                         return OutcomeEnum.TargetDeadEnum;

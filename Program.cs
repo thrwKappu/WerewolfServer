@@ -281,7 +281,7 @@ namespace DNWS
                     Console.WriteLine("Http Listener is not supported");
                     return;
                 }
-                string[] prefixes = { "http://*:2343/" };
+                string[] prefixes = { "http://*:" + Program.Configuration["Port"] + "/" };
                 listener = new HttpListener();
                 foreach (string s in prefixes)
                 {
