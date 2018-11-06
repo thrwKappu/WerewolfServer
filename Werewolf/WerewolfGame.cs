@@ -742,7 +742,7 @@ namespace DNWS.Werewolf
                     }
                     return OutcomeEnum.ActionPerformedEnum;
                 }
-                else if (action.Name == WerewolfGame.ACTION_SHOOT)
+                else if (action.Name == WerewolfGame.ACTION_SHOOT && target.Status == Player.StatusEnum.AliveEnum)
                 {
                     SetPlayerStatus(target.Id.ToString(), Player.StatusEnum.ShotDeadEnum);
                     return OutcomeEnum.TargetDeadEnum;
