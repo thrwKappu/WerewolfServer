@@ -17,6 +17,7 @@ namespace DNWS.Werewolf
         public DbSet<ActionRole> ActionRoles { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
         private static bool _created = false;
+        public string myguid;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -38,12 +39,14 @@ namespace DNWS.Werewolf
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            // uncomment next line to enable sqlite storage (you need to comment out MySQL line as well)
             optionsBuilder.UseSqlite("Data Source=werewolf.db");
             //optionsBuilder.UseMySQL("server=localhost;database=werewolf;user=werewolf;password=werewolf;SslMode=none");
             optionsBuilder.EnableSensitiveDataLogging();
         }
         public WerewolfContext()
         {
+            myguid = Guid.NewGuid().ToString();
             if (!_created) {
                 _created = true;
                 //Database.EnsureDeleted();

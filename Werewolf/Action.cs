@@ -19,6 +19,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations.Schema;
+using Newtonsoft.Json.Converters;
 
 namespace DNWS.Werewolf 
 { 
@@ -43,11 +44,9 @@ namespace DNWS.Werewolf
         [DataMember(Name="name")]
         public string Name { get; set; }
 
-        /// <summary>
-        /// Gets or Sets Role
-        /// </summary>
         [DataMember(Name="actionrole")]
         public virtual ICollection<ActionRole> ActionRoles { get; set; }
+
         [NotMapped]
         [JsonProperty("roles")]
         public List<Role> Roles {get; set;}
@@ -58,6 +57,104 @@ namespace DNWS.Werewolf
         [DataMember(Name="description")]
         public string Description { get; set; }
 
+        /// <summary>
+        /// Gets or Sets Outcome
+        /// </summary>
+        [JsonConverter(typeof(StringEnumConverter))]
+        public enum OutcomeEnum
+        { 
+            /// <summary>
+            /// Enum TargetDeadEnum for TargetDead
+            /// </summary>
+            [EnumMember(Value = "Target Dead")]
+            TargetDeadEnum = 1,
+            
+            /// <summary>
+            /// Enum PlayerDeadEnum for PlayerDead
+            /// </summary>
+            [EnumMember(Value = "Player Dead")]
+            PlayerDeadEnum = 2,
+            
+            /// <summary>
+            /// Enum OtherPlayerDeadEnum for OtherPlayerDead
+            /// </summary>
+            [EnumMember(Value = "Other Player Dead")]
+            OtherPlayerDeadEnum = 3,
+            
+            /// <summary>
+            /// Enum NothingHappenedEnum for NothingHappened
+            /// </summary>
+            [EnumMember(Value = "Nothing Happened")]
+            NothingHappenedEnum = 4,
+            
+            /// <summary>
+            /// Enum ActionPerformedEnum for ActionPerformed
+            /// </summary>
+            [EnumMember(Value = "Action Performed")]
+            ActionPerformedEnum = 5,
+            
+            /// <summary>
+            /// Enum EnchantedEnum for Enchanted
+            /// </summary>
+            [EnumMember(Value = "Enchanted")]
+            EnchantedEnum = 6,
+            
+            /// <summary>
+            /// Enum JailedEnum for Jailed
+            /// </summary>
+            [EnumMember(Value = "Jailed")]
+            JailedEnum = 7,
+            
+            /// <summary>
+            /// Enum RevealedEnum for Revealed
+            /// </summary>
+            [EnumMember(Value = "Revealed")]
+            RevealedEnum = 8,
+            
+            /// <summary>
+            /// Enum UnknownEnum for Unknown
+            /// </summary>
+            [EnumMember(Value = "Unknown")]
+            UnknownEnum = 9,
+            
+            /// <summary>
+            /// Enum WerewolfEnum for Werewolf
+            /// </summary>
+            [EnumMember(Value = "Werewolf")]
+            WerewolfEnum = 10,
+            
+            /// <summary>
+            /// Enum VillagerEnum for Villager
+            /// </summary>
+            [EnumMember(Value = "Villager")]
+            VillagerEnum = 11,
+            
+            /// <summary>
+            /// Enum NotValidActionEnum for NotValidAction
+            /// </summary>
+            [EnumMember(Value = "Not Valid Action")]
+            NotValidActionEnum = 12,
+            
+            /// <summary>
+            /// Enum TargetIsNotAlivedEnum for TargetIsNotAlived
+            /// </summary>
+            [EnumMember(Value = "Target Is Not Alived")]
+            TargetIsNotAlivedEnum = 13
+        }
+
+        /// <summary>
+        /// Gets or Sets Outcome
+        /// </summary>
+        [NotMapped]
+        [JsonProperty("outcome")]
+        public OutcomeEnum? Outcome { get; set; }
+
+        /// <summary>
+        /// Gets or Sets Target
+        /// </summary>
+        [NotMapped]
+        [JsonProperty("target")]
+        public string Target { get; set; }
         public Action()
         {
             this.ActionRoles = new HashSet<ActionRole>();

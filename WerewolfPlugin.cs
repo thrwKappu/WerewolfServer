@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using System.Linq;
+using Action = DNWS.Werewolf.Action;
+using OutcomeEnum = DNWS.Werewolf.Action.OutcomeEnum;
 
 namespace DNWS
 {
@@ -33,7 +35,7 @@ namespace DNWS
         protected HTTPResponse WerewolfProcess(HTTPRequest httpRequest,string[] requests, string method)
         {
             HTTPResponse response = new HTTPResponse(200);
-            WerewolfGame werewolf = new WerewolfGame(new WerewolfContext());
+            WerewolfGame werewolf = new WerewolfGame();
             string path = requests[0].ToUpper();
             string action = method.ToUpper();
             int request_length = requests.Length;
@@ -175,12 +177,14 @@ namespace DNWS
                                     Player player = werewolf.GetPlayerByName(p.Name);
                                     if (player.Password != p.Password || player.Name != p.Name)
                                     {
-                                        response.SetBodyString("{\"error\":\"User not found or password is incorrect.\"}");
+                                        response.SetBodyString("{\"description\":\"User not found or password is incorrect.\"}");
                                         response.Status = 404;
                                         return response;
 
                                     }
                                     player.Session = Guid.NewGuid().ToString();
+                                    player.Game = null;
+                                    player.GameId = null;
                                     werewolf.UpdatePlayer(player);
                                     player.Password = "";
                                     response.SetBodyJson(player);
@@ -189,7 +193,7 @@ namespace DNWS
                                 }
                                 catch (Exception)
                                 {
-                                    response.SetBodyString("{\"error\":\"User not found or password is incorrect.\"}");
+                                    response.SetBodyString("{\"description\":\"User not found or password is incorrect.\"}");
                                     response.Status = 404;
                                     return response;
                                 }
@@ -404,6 +408,11 @@ namespace DNWS
                             {
                                 // Player not found
                                 Console.WriteLine(ex.ToString());
+                                response.Status = 400;
+                                return response;
+                            }
+                            if (player == null)
+                            {
                                 response.Status = 404;
                                 return response;
                             }
@@ -458,27 +467,39 @@ namespace DNWS
                             string targetID = requests[4];
                             try
                             {
-                                string outcome = werewolf.PostAction(sessionID, actionID, targetID);
-                                if (outcome == WerewolfGame.OUTCOME_REVEALED)
+                                Action act = new Action();
+                                Action.OutcomeEnum outcome = werewolf.PostAction(sessionID, actionID, targetID);
+                                if (outcome == OutcomeEnum.RevealedEnum)
                                 {
                                     Player target = werewolf.GetPlayer(targetID);
-                                    response.SetBodyString("{\"outcome\":\"revealed\",\"role\":\"{" + target.Role.Name + "}\"}");
+                                    act.Outcome = OutcomeEnum.RevealedEnum;
+                                    act.Target = target.Role.Name;
+                                    //response.SetBodyString("{\"outcome\":\"revealed\",\"role\":\"{" + target.Role.Name + "}\"}");
                                 }
-                                else if (outcome == WerewolfGame.OUTCOME_ENCHANTED)
+                                else if (outcome ==  OutcomeEnum.EnchantedEnum)
                                 {
-                                    response.SetBodyString("{\"outcome\":\"revealed\",\"role\":\"{" + WerewolfGame.ROLE_ALPHA_WEREWOLF + "}\"}");
+                                    act.Outcome = OutcomeEnum.RevealedEnum;
+                                    act.Target = WerewolfGame.ROLE_ALPHA_WEREWOLF;
+                                    //response.SetBodyString("{\"outcome\":\"revealed\",\"role\":\"{" + WerewolfGame.ROLE_ALPHA_WEREWOLF + "}\"}");
+                                }
+                                else if (outcome == OutcomeEnum.TargetDeadEnum)
+                                {
+                                    act.Outcome = OutcomeEnum.TargetDeadEnum;
+                                    act.Target = targetID;
                                 }
                                 else
                                 {
+                                    act.Outcome = outcome;
                                     response.SetBodyString("{\"outcome\":\"" + outcome + "\"}");
                                 }
+                                response.SetBodyJson(act);
                                 response.Status = 201;
                                 return response;
                             }
                             catch (Exception ex)
                             {
                                 Console.WriteLine(ex.ToString());
-                                response.SetBodyString("{\"error\":\"" + ex.ToString() + "\"}");
+                                response.SetBodyString("{\"description\":\"" + ex.ToString() + "\"}");
                                 response.Status = 400;
                                 return response;
                             }
@@ -727,6 +748,7 @@ namespace DNWS
                                 foreach (ActionRole ar in act.ActionRoles)
                                 {
                                     ar.Action.ActionRoles = null;
+                                    ar.Role.ActionRoles = null;
                                     roles.Add(ar.Role);
                                 }
                                 act.Roles = roles.OrderBy(r => r.Id).ToList();

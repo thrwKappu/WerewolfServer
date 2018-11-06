@@ -107,17 +107,17 @@ namespace DNWS.Werewolf
         [JsonConverter(typeof(StringEnumConverter))]
         public enum OutcomeEnum
         {
-            [EnumMember(Value = "villagerwin")]
+            [EnumMember(Value = "villager win")]
             VillagerWin = 1,
-            [EnumMember(Value = "werewolfwin")]
+            [EnumMember(Value = "werewolf win")]
             WerewolfWin = 2,
-            [EnumMember(Value = "foolwin")]
+            [EnumMember(Value = "fool win")]
             FoolWin = 3,
-            [EnumMember(Value = "headhunterwin")]
+            [EnumMember(Value = "headhunter win")]
             HeadHunterWin = 4,
-            [EnumMember(Value = "serialkillerwin")]
+            [EnumMember(Value = "serialkiller win")]
             SerialKillerWin = 5,
-            [EnumMember(Value = "nowin")]
+            [EnumMember(Value = "no win")]
             NoWin = 6,
         }
         [DataMember(Name="outcome")]

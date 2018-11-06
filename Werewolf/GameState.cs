@@ -46,23 +46,73 @@ namespace DNWS.Werewolf
         public Player TargetByHeadHunter {get => _target_by_head_hunter; set => _target_by_head_hunter = value;}
         private Player _revive_by_medium = null;
         public Player ReviveByMedium {get => _revive_by_medium; set => _revive_by_medium = value;}
-        private Dictionary<Player, Player> _dayVoteList;
-        private Dictionary<Player, Player> _nightVoteList;
-        public Dictionary<Player, Player> DayVoteList
+        private Dictionary<long?, long?> _dayVoteList;
+        private Dictionary<long?, long?> _nightVoteList;
+        [NotMapped]
+        public Dictionary<long?, long?> DayVoteList
         {
             get { return _dayVoteList;}
+            set { _dayVoteList = value;}
         }
-        public Dictionary<Player, Player> NightVoteList
+        public string DayVoteListJson
+        {
+            get
+            { 
+                if (_dayVoteList == null)
+                {
+                    return null;
+                }
+                return JsonConvert.SerializeObject(_dayVoteList);
+            }
+            set
+            {
+                if (value == null)
+                {
+                    _dayVoteList = null;
+                }
+                else
+                {
+                    _dayVoteList = JsonConvert.DeserializeObject<Dictionary<long?, long?>>(value);
+                }
+            }
+
+        }
+        [NotMapped]
+        public Dictionary<long?, long?> NightVoteList
         {
             get { return _nightVoteList;}
+            set { _nightVoteList = value;}
+        }
+        public string NightVoteListJson
+        {
+            get
+            { 
+                if (_nightVoteList == null)
+                {
+                    return null;
+                }
+                return JsonConvert.SerializeObject(_nightVoteList);
+            }
+            set
+            {
+                if (value == null)
+                {
+                    _nightVoteList = null;
+                }
+                else
+                {
+                    _nightVoteList = JsonConvert.DeserializeObject<Dictionary<long?, long?>>(value);
+                }
+            }
+
         }
         public void ResetDayVoteList()
         {
-            _dayVoteList = new Dictionary<Player, Player>();
+            _dayVoteList = new Dictionary<long?, long?>();
         }
         public void ResetNightVoteList()
         {
-            _nightVoteList = new Dictionary<Player, Player>();
+            _nightVoteList = new Dictionary<long?, long?>();
         }
     }
 }
