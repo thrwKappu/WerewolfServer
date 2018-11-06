@@ -38,15 +38,15 @@ namespace DNWS.Werewolf
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            //optionsBuilder.UseSqlite("Data Source=werewolf.db");
-            optionsBuilder.UseMySQL("server=localhost;database=werewolf;user=werewolf;password=werewolf;SslMode=none");
+            optionsBuilder.UseSqlite("Data Source=werewolf.db");
+            //optionsBuilder.UseMySQL("server=localhost;database=werewolf;user=werewolf;password=werewolf;SslMode=none");
             optionsBuilder.EnableSensitiveDataLogging();
         }
         public WerewolfContext()
         {
             if (!_created) {
                 _created = true;
-                // Database.EnsureDeleted();
+                //Database.EnsureDeleted();
                 Database.EnsureCreated();
             }
         }
