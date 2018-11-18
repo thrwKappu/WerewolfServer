@@ -71,17 +71,15 @@ namespace DNWS.Werewolf
         private static bool _roleInitialized = false;
         private static bool _actionInitialized = false;
         private static Int64 _currentGameId = 0;
-        public static int MAX_PLAYERS = 2;
+        public static int DEFAULT_MAX_PLAYERS = 2;
+        private int _max_players = DEFAULT_MAX_PLAYERS;
+        public int max_players {  get => _max_players; set => _max_players = value;}
         public static int GAME_COUNTDOWN_PERIOD = 5;
-        public static int GAME_DAY_PERIOD = 10;
-        public static int GAME_NIGHT_PERIOD = 10;
+        public static int GAME_DAY_PERIOD = 30;
+        public static int GAME_NIGHT_PERIOD = 30;
         public static int GAME_MAX_DAY = 10;
 
-        private ChatMessageChannel deadChannel;
-        private ChatMessageChannel dayChannel;
-        private ChatMessageChannel wolfChannel;
-        private ChatMessageChannel jailChannel;
-
+        private ChatMessageManager chatManager;
         private static List<IObserver<WerewolfEvent>> observers = null;
 
         public Int64 CurrentGameId
@@ -97,6 +95,18 @@ namespace DNWS.Werewolf
         }
         public WerewolfGame()
         {
+            string max = null;
+            if ((max = System.Environment.GetEnvironmentVariable("WEREWOLF_MAX_PLAYER")) != null)
+            {
+                try
+                {
+                    max_players = int.Parse(max);
+                }
+                catch
+                {
+                    Console.WriteLine("Invalid WEREWOLF_MAX_PLAYER variable, fall back to default value");
+                }
+            }
             using (WerewolfContext _db = new WerewolfContext())
             {
                 try
@@ -120,10 +130,7 @@ namespace DNWS.Werewolf
             {
                 observers = new List<IObserver<WerewolfEvent>>();
             }
-            dayChannel = new ChatMessageChannel();
-            deadChannel = new ChatMessageChannel();
-            wolfChannel = new ChatMessageChannel();
-            jailChannel = new ChatMessageChannel();
+            chatManager = new ChatMessageManager();
         }
 
         private static T DeepClone<T>(T obj)
@@ -280,7 +287,7 @@ namespace DNWS.Werewolf
                     throw new GameNotPlayableWerewolfException("Game is already ended or running");
                 }
                 List<Player> players = game.Players.ToList();
-                if (players.Count >= MAX_PLAYERS)
+                if (players.Count >= max_players)
                 {
                     throw new GameNotPlayableWerewolfException("Game is fulled already");
                 }
@@ -565,21 +572,21 @@ namespace DNWS.Werewolf
             }
             if (game.Period == Game.PeriodEnum.DayEnum && player.Status == Player.StatusEnum.AliveEnum)
             {
-                return dayChannel.GetSince(lastID);
+                return chatManager.GetSince(game.Id, ChatMessage.ChannelEnum.VillageEnum, lastID);
             }
             else
             {
                 if (player.Status != Player.StatusEnum.AliveEnum || player.Role.Name == WerewolfGame.ROLE_MEDIUM)
                 {
-                    return deadChannel.GetSince(lastID);
+                    return chatManager.GetSince(game.Id, ChatMessage.ChannelEnum.DeadEnum, lastID);
                 }
                 else if (IsWerewolf(player.Role.Name))
                 {
-                    return wolfChannel.GetSince(lastID);
+                    return chatManager.GetSince(game.Id, ChatMessage.ChannelEnum.WolfEnum, lastID);
                 }
                 else if (player.Role.Name == WerewolfGame.ROLE_JAILER || (game.Jailed != null && game.Jailed.Id == player.Id))
                 {
-                    return jailChannel.GetSince(lastID);
+                    return chatManager.GetSince(game.Id, ChatMessage.ChannelEnum.JailEnum, lastID);
                 }
                 throw new PlayerIsNotAllowToChatWerewolfException("You're not allow to talk now");
             }
@@ -609,25 +616,34 @@ namespace DNWS.Werewolf
             {
                 throw new PlayerIsNotAllowToChatWerewolfException("Please wait for processing.");
             }
+            message.GameId = game.Id;
+            message.PlayerId = (long)player.Id;
             if (game.Period == Game.PeriodEnum.DayEnum)
             {
-                dayChannel.Add(message);
+                message.Channel = ChatMessage.ChannelEnum.VillageEnum;
+                chatManager.Add(message);
             }
             else
             {
                 if (player.Status != Player.StatusEnum.AliveEnum || player.Role.Name == WerewolfGame.ROLE_MEDIUM)
                 {
-                    deadChannel.Add(message);
+                    message.Channel = ChatMessage.ChannelEnum.DeadEnum;
+                    chatManager.Add(message);
                 }
                 else if (IsWerewolf(player.Role.Name))
                 {
-                    wolfChannel.Add(message);
+                    message.Channel = ChatMessage.ChannelEnum.WolfEnum;
+                    chatManager.Add(message);
                 }
-                else if (player.Role.Name == WerewolfGame.ROLE_JAILER || game.Jailed.Id == player.Id)
+                else if (player.Role.Name == WerewolfGame.ROLE_JAILER || (game.Jailed != null && game.Jailed.Id == player.Id))
                 {
-                    jailChannel.Add(message);
+                    message.Channel = ChatMessage.ChannelEnum.JailEnum;
+                    chatManager.Add(message);
                 }
-                throw new PlayerIsNotAllowToChatWerewolfException("You're not allow to chat now.");
+                else
+                {
+                    throw new PlayerIsNotAllowToChatWerewolfException("You're not allow to chat now.");
+                }
             }
         }
         public OutcomeEnum PostAction(string sessionID, string actionID, string targetID)

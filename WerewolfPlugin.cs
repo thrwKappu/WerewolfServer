@@ -447,7 +447,7 @@ namespace DNWS
                                     {
                                         // Check game seat, if full, create new
                                         game = werewolf.GetGame(werewolf.CurrentGameId.ToString());
-                                        if (game.Players.Count >= WerewolfGame.MAX_PLAYERS || game.Status == Game.StatusEnum.EndedEnum)
+                                        if (game.Players.Count >= werewolf.max_players || game.Status == Game.StatusEnum.EndedEnum)
                                         {
                                             game = werewolf.CreateGame();
                                             werewolf.CurrentGameId = (long)game.Id;
@@ -857,13 +857,6 @@ namespace DNWS
                         try
                         {
                             List<ChatMessage> messages = werewolf.GetMessages(sessionID, lastID).OrderBy(m => m.Id).ToList();
-                            foreach (ChatMessage message in messages)
-                            {
-                                message.Player.Role = null;
-                                message.Player.Session = "";
-                                message.Player.Password = "";
-                                message.Player.Game = null;
-                            }
                             response.SetBodyJson(messages);
                             return response;
                         }

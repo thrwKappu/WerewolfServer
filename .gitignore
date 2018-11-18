@@ -6,3 +6,4 @@ Migrations/
 *.db
 .vs/DNWS/v15/.suo
 .vscode/settings.json
+werewolf.db-journal
