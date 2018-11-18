@@ -101,10 +101,16 @@ namespace DNWS
                                 response.Status = 200;
                                 return response;
                             }
-                            catch (Exception ex)
+                            catch (PlayerNotFoundWerewolfException ex)
                             {
                                 Console.WriteLine(ex.ToString());
                                 response.Status = 404;
+                                return response;
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 400;
                                 return response;
                             }
                         }
@@ -191,10 +197,16 @@ namespace DNWS
                                     response.Status = 201;
                                     return response;
                                 }
-                                catch (Exception)
+                                catch (PlayerNotFoundWerewolfException)
                                 {
                                     response.SetBodyString("{\"description\":\"User not found or password is incorrect.\"}");
                                     response.Status = 404;
+                                    return response;
+                                }
+                                catch (Exception)
+                                {
+                                    response.SetBodyString("{\"description\":\"Invalid data.\"}");
+                                    response.Status = 400;
                                     return response;
                                 }
                             }
@@ -215,6 +227,12 @@ namespace DNWS
                         Player player = JsonConvert.DeserializeObject<Player>(httpRequest.Body);
                         werewolf.UpdatePlayer(player);
                         response.Status = 200;
+                        return response;
+                    }
+                    catch (PlayerNotFoundWerewolfException ex)
+                    {
+                        Console.WriteLine(ex.ToString());
+                        response.Status = 404;
                         return response;
                     }
                     catch (Exception ex)
@@ -406,7 +424,6 @@ namespace DNWS
                             }
                             catch (Exception ex)
                             {
-                                // Player not found
                                 Console.WriteLine(ex.ToString());
                                 response.Status = 400;
                                 return response;
@@ -430,7 +447,7 @@ namespace DNWS
                                     {
                                         // Check game seat, if full, create new
                                         game = werewolf.GetGame(werewolf.CurrentGameId.ToString());
-                                        if (game.Players.Count >= WerewolfGame.MAX_PLAYERS || game.Status == Game.StatusEnum.EndedEnum)
+                                        if (game.Players.Count >= werewolf.max_players || game.Status == Game.StatusEnum.EndedEnum)
                                         {
                                             game = werewolf.CreateGame();
                                             werewolf.CurrentGameId = (long)game.Id;
@@ -448,6 +465,18 @@ namespace DNWS
                                 }
                                 response.Status = 201;
                                 response.SetBodyJson(game);
+                                return response;
+                            }
+                            catch (GameNotPlayableWerewolfException ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 403;
+                                return response;
+                            }
+                            catch (PlayerInGameAlreadyWerewolfException ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 404;
                                 return response;
                             }
                             catch (Exception ex)
@@ -496,6 +525,54 @@ namespace DNWS
                                 response.Status = 201;
                                 return response;
                             }
+                            catch (PlayerIsNotAliveWerewolfException ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 403;
+                                return response;
+                            }
+                            catch (PlayerNotFoundWerewolfException ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 404;
+                                return response;
+                            }
+                            catch (ActionNotFoundWerewolfException ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 405;
+                                return response;
+                            }
+                            catch (TargetNotFoundWerewolfException ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 406;
+                                return response;
+                            }
+                            catch (CantPerformOnYourselfWerewolfException ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 407;
+                                return response;
+                            }
+                            catch (PlayerIsNotInGameWerewolfException ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 408;
+                                return response;
+                            }
+                            catch (ProcessingPeriodWerewolfException ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 409;
+                                return response;
+                            }
+                            catch (GameNotPlayableWerewolfException ex)
+                            {
+                                Console.WriteLine(ex.ToString());
+                                response.Status = 410;
+                                return response;
+                            }
                             catch (Exception ex)
                             {
                                 Console.WriteLine(ex.ToString());
@@ -537,7 +614,7 @@ namespace DNWS
                             {
                                 player = werewolf.GetPlayerBySession(sessionID);
                             }
-                            catch (Exception ex)
+                            catch (PlayerNotFoundWerewolfException ex)
                             {
                                 //Player not found
                                 Console.WriteLine(ex.ToString());
@@ -771,6 +848,96 @@ namespace DNWS
             }
             else if (path == REQUEST_CHAT)
             {
+                if (action == HTTP_GET)
+                {
+                    if (request_length == 3)
+                    {
+                        string sessionID = requests[1];
+                        string lastID = requests[2];
+                        try
+                        {
+                            List<ChatMessage> messages = werewolf.GetMessages(sessionID, lastID).OrderBy(m => m.Id).ToList();
+                            response.SetBodyJson(messages);
+                            return response;
+                        }
+                        catch (PlayerNotFoundWerewolfException ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                            response.Status = 404;
+                            return response;
+                        }
+                        catch (PlayerIsNotAliveWerewolfException ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                            response.Status = 403;
+                            return response;
+                        }
+                        catch (PlayerIsNotInGameWerewolfException ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                            response.Status = 405;
+                            return response;
+                        }
+                        catch (PlayerIsNotAllowToChatWerewolfException ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                            response.Status = 406;
+                            return response;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                            response.Status = 400;
+                            return response;
+                        }
+                    }
+
+                }
+                else if (action == HTTP_POST)
+                {
+                    if (request_length == 2)
+                    {
+                        string sessionID = requests[1];
+                        try
+                        {
+                            ChatMessage message = JsonConvert.DeserializeObject<ChatMessage>(httpRequest.Body);
+                            werewolf.PostMessage(sessionID, message);
+                            response.Status = 201;
+                            return response;
+                        }
+                        catch (PlayerNotFoundWerewolfException ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                            response.Status = 404;
+                            return response;
+                        }
+                        catch (PlayerIsNotAliveWerewolfException ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                            response.Status = 403;
+                            return response;
+                        }
+                        catch (PlayerIsNotInGameWerewolfException ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                            response.Status = 405;
+                            return response;
+                        }
+                        catch (PlayerIsNotAllowToChatWerewolfException ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                            response.Status = 406;
+                            return response;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                            response.Status = 400;
+                            return response;
+                        }
+                    }
+                    
+                }
             }
             response.Status = 400;
             return response;

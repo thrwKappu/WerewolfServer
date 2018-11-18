@@ -306,10 +306,17 @@ namespace DNWS.Werewolf
                     }
                     break;
                 case WerewolfEvent.PLAYER_JOIN:
-                    if (game.Players.Count >= WerewolfGame.MAX_PLAYERS)
+                    if (game.Players.Count >= werewolf.max_players)
                     {
                         Console.WriteLine("Start game {0}", game.Id);
-                        werewolf.StartGame(game.Id.ToString());
+                        try
+                        {
+                            werewolf.StartGame(game.Id.ToString());
+                        }
+                        catch (GameNotFoundWerewolfException ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                        }
                     }
                     break;
                 case WerewolfEvent.GAME_STARTED:
