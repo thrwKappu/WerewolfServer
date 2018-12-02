@@ -7,6 +7,7 @@ using System.IO;
 using Microsoft.Extensions.Configuration;
 using System.Threading;
 using DNWS.Werewolf;
+using HeyRed.Mime;
 
 namespace DNWS
 {
@@ -18,7 +19,7 @@ namespace DNWS
         // Log to console
         public void Log(String msg)
         {
-            Console.WriteLine(msg);
+            Console.WriteLine("[" + System.DateTime.Now.ToLongTimeString() + "] " + msg);
         }
 
         // Start the server, Singleton here
@@ -26,18 +27,23 @@ namespace DNWS
         {
             // Start server
             var builder = new ConfigurationBuilder();
-            builder.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("config.json");
+            builder.SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("config.json",false,true);
             Configuration = builder.Build();
+            
             // FIXME: refactor this into separate plugin system
             WerewolfManager wm = new WerewolfManager();
             wm.Start();
+
+            
             DotNetWebServer ws = DotNetWebServer.GetInstance(this);
             ws.Start();
+
         }
 
         static void Main(string[] args)
         {
             Program p = new Program();
+            
             p.Start();
         }
     }
@@ -120,16 +126,17 @@ namespace DNWS
         {
             HTTPResponse response = null;
 
-            // Guess the content type from file extension
-            string fileType = "text/html";
-            if (path.ToLower().EndsWith("jpg") || path.ToLower().EndsWith("jpeg"))
-            {
-                fileType = "image/jpeg";
-            }
-            if (path.ToLower().EndsWith("png"))
-            {
-                fileType = "image/png";
-            }
+            //Red's Mime guesser is simple, but shit, as it depending on shitty magiclib; but it's work for now
+            //Might moved to community developed dictionary list
+
+            
+            string fileType = "text";                           //Default
+            if (File.Exists(path))
+                fileType = MimeGuesser.GuessMimeType(path);
+
+            //it's css not a text goddammit
+            if (path.ToLower().EndsWith("css"))
+                fileType = "text/css";
 
             // Try to read the file, if not found then 404, otherwise, 500.
             try
@@ -148,6 +155,8 @@ namespace DNWS
                 response = new HTTPResponse(500);
                 response.Body = Encoding.UTF8.GetBytes("<h1>500 Internal Server Error</h1>" + ex.Message);
             }
+
+            
             return response;
 
         }
@@ -181,17 +190,21 @@ namespace DNWS
                         response = plugininfo.Value.reference.GetResponse(request);
                         processed = true;
                     }
+
+                    _parent.Log(plugininfo.ToString() + " Response: " + response.Body + " | Type: " + response.Type + " | Status: " + response.Status);
                 }
                 // local file
                 if(!processed) {
-                    if (request.Filename.Equals(""))
+                    if (request.Path.Equals("") && request.Filename.Equals(""))
                     {
                         response = getFile(ROOT + "/index.html");
                     }
-                    else
+                    else 
                     {
-                        response = getFile(ROOT + "/" + request.Filename);
+                        response = getFile(ROOT + request.Url);
                     }
+
+                    _parent.Log("File: " + request.Url + " | Type: " + response.Type + " | Status: " + response.Status);
                 }
                 // post processing pipe
                 foreach(KeyValuePair<string, PluginInfo> plugininfo in plugins) {
@@ -273,6 +286,10 @@ namespace DNWS
         /// </summary>
         public void Start()
         {
+            System.Console.Clear();
+
+            Console.WriteLine("Initializing Werewolf Server");
+
             // Start the listener
             try
             {
@@ -281,19 +298,27 @@ namespace DNWS
                     Console.WriteLine("Http Listener is not supported");
                     return;
                 }
+
                 string[] prefixes = { "http://*:" + Program.Configuration["Port"] + "/" };
                 listener = new HttpListener();
                 foreach (string s in prefixes)
                 {
                     listener.Prefixes.Add(s);
                 }
-                listener.Start();
-                _parent.Log("Server started");
 
+                try
+                {
+                    listener.Start();
+                }
+                catch (Exception ex)
+                {
+                    _parent.Log("Server starting error: " + ex.Message + "\n" + ex.StackTrace);
+                }
+                _parent.Log("Server started on port " + Program.Configuration["Port"]);
             }
             catch (Exception ex)
             {
-                _parent.Log(ex.ToString());
+                Console.WriteLine(ex.ToString());
                 return;
             }
             // Run the processing loop
@@ -303,8 +328,10 @@ namespace DNWS
                 {
                     // Wait for client
                     HttpListenerContext context = listener.GetContext();
+                    
                     // Get one, show some info
-                    _parent.Log("Client accepted:" + context.Request.RemoteEndPoint.ToString());
+                    _parent.Log(string.Format("{0} requesting {1} from {2}", context.Request.HttpMethod, context.Request.Url ,context.Request.RemoteEndPoint));
+
                     HTTPProcessor hp = new HTTPProcessor(context, _parent);
                     Thread thread = new Thread(new ThreadStart(hp.Process));
                     id++;
@@ -312,7 +339,7 @@ namespace DNWS
                 }
                 catch (Exception ex)
                 {
-                    _parent.Log("Server starting error: " + ex.Message + "\n" + ex.StackTrace);
+                    _parent.Log("Error: " + ex.Message + "\n" + ex.StackTrace);
                 }
             }
         }
