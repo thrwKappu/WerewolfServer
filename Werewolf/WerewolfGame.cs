@@ -434,6 +434,7 @@ namespace DNWS.Werewolf
                 p.Password = player.Password;
                 p.Session = player.Session;
                 p.GameId = player.GameId;
+                p.Status = player.Status;
                 if (p.GameId == null)
                 {
                     p.Game = null;
@@ -588,6 +589,8 @@ namespace DNWS.Werewolf
                 {
                     return chatManager.GetSince(game.Id, ChatMessage.ChannelEnum.JailEnum, lastID);
                 }
+
+                //might add catch
                 throw new PlayerIsNotAllowToChatWerewolfException("You're not allow to talk now");
             }
         }

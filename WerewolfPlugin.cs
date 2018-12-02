@@ -97,6 +97,9 @@ namespace DNWS
                                 string session = requests[2];
                                 Player player = werewolf.GetPlayerBySession(session);
                                 player.Session = "";
+                                player.Status = Player.StatusEnum.OfflineEnum;
+                                
+
                                 werewolf.UpdatePlayer(player);
                                 response.Status = 200;
                                 return response;
@@ -191,6 +194,8 @@ namespace DNWS
                                     player.Session = Guid.NewGuid().ToString();
                                     player.Game = null;
                                     player.GameId = null;
+                                    player.Status = p.Status;
+
                                     werewolf.UpdatePlayer(player);
                                     player.Password = "";
                                     response.SetBodyJson(player);
