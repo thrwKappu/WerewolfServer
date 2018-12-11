@@ -58,7 +58,6 @@ namespace DNWS.Werewolf
         [DataMember(Name="gameid")]
         public long? GameId { get; set; }
 
-
         /// <summary>
         /// Gets or Sets Role
         /// </summary>
@@ -131,7 +130,15 @@ namespace DNWS.Werewolf
         /// </summary>
         /// <value>Player status in a game</value>
         [Required]
-        [DataMember(Name="status")]
+        [DataMember(Name = "status")]
         public StatusEnum? Status { get; set; }
+        
+
+        /// <summary>
+        /// Registeration Date
+        /// </summary>
+        /// <value>date in yyyy-mm-dd format</value>
+        [DataMember(Name="regisdate")]
+        public DateTime Regisdate { get; set; }
     }
 }
