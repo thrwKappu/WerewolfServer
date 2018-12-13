@@ -96,9 +96,11 @@ namespace DNWS
                             {
                                 string session = requests[2];
                                 Player player = werewolf.GetPlayerBySession(session);
+
+                                werewolf.LeaveGame(player.Game, player);
+
                                 player.Session = "";
                                 player.Status = Player.StatusEnum.OfflineEnum;
-                                
 
                                 werewolf.UpdatePlayer(player);
                                 response.Status = 200;
@@ -186,12 +188,11 @@ namespace DNWS
                                     Player player = werewolf.GetPlayerByName(p.Name);
                                     if (player.Password != p.Password || player.Name != p.Name)
                                     {
-                                        response.SetBodyString("{\"description\":\"User not found or password is incorrect.\"}");
-                                        response.Status = 404;
-                                        return response;
-
+                                        throw new PlayerNotFoundWerewolfException();
                                     }
+
                                     player.Session = Guid.NewGuid().ToString();
+                                    
                                     player.Game = null;
                                     player.GameId = null;
                                     player.Status = p.Status;
@@ -204,12 +205,14 @@ namespace DNWS
                                 }
                                 catch (PlayerNotFoundWerewolfException)
                                 {
+                                    Console.WriteLine("[LOGIN] user not found");
                                     response.SetBodyString("{\"description\":\"User not found or password is incorrect.\"}");
                                     response.Status = 404;
                                     return response;
                                 }
-                                catch (Exception)
-                                {
+                                catch (Exception ex)
+                                { 
+                                    Console.WriteLine(ex.ToString());
                                     response.SetBodyString("{\"description\":\"Invalid data.\"}");
                                     response.Status = 400;
                                     return response;
@@ -883,9 +886,9 @@ namespace DNWS
                             response.Status = 405;
                             return response;
                         }
-                        catch (PlayerIsNotAllowToChatWerewolfException ex)
+                        catch (PlayerIsNotAllowToChatWerewolfException)
                         {
-                            Console.WriteLine(ex.ToString());
+                            //Console.WriteLine(ex.ToString());
                             response.Status = 406;
                             return response;
                         }
