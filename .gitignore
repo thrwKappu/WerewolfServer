@@ -7,3 +7,7 @@ Migrations/
 .vs/DNWS/v15/.suo
 .vscode/settings.json
 werewolf.db-journal
+sites/
+.dtbcache
+db.lock
+storage.*
