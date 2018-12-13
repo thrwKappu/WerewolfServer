@@ -139,6 +139,6 @@ namespace DNWS.Werewolf
         /// </summary>
         /// <value>date in yyyy-mm-dd format</value>
         [DataMember(Name="regisdate")]
-        public DateTime Regisdate { get; set; }
+        public string Regisdate { get; set; }
     }
 }
