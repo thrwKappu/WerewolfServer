@@ -97,8 +97,10 @@ namespace DNWS
                                 string session = requests[2];
                                 Player player = werewolf.GetPlayerBySession(session);
                                 
-                                var _game = werewolf.GetGame(player.Game.Id.ToString());
-                                werewolf.LeaveGame(_game, player);
+                                if (player.Game != null){
+                                    var _game = werewolf.GetGame(player.Game.Id.ToString());
+                                    werewolf.LeaveGame(_game, player);
+                                }
 
                                 player.Session = "";
                                 player.Status = Player.StatusEnum.OfflineEnum;
